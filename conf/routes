@@ -1,0 +1,9 @@
+# Routes
+# This file defines all application routes (Higher priority routes first)
+# ~~~~
+
+GET     /                           controllers.Application.index()
+
+GET		/Recommandations/:userId/:time/:longitude/:latitude/:js	controllers.Application.recommandations(userId : Integer, time : Long, longitude : String, latitude : String, js: String)
+
+#GET		/Try/:userId/:time/:longitude/:latitude	controllers.Application.recommandations(userId : Integer, time : Long, longitude : String, latitude : String, types="")

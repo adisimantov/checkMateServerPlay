@@ -1,0 +1,19 @@
+New log file opened at Sat May 28 23:45:18 IDT 2016 by 6664@Adi
+Taking next connection to: 61624
+New client attempting to connect on port: 61625-61624
+  Address = /192.168.173.1:61624
+This client on port 61625 has uuid f2dbef0d-13a7-47fe-a891-3ee0ad8eb294 configName play-fork-run humanReadableName Play Fork Run protocolVersion 1 featureTags Vector()
+Connected Clients: play-fork-run-f2dbef0d-13a7-47fe-a891-3ee0ad8eb294
+Taking next connection to: 61624
+Checking to see if clients are empty...
+We have 1 non-daemon clients, continuing serving connections.
+Taking next connection to: 61624
+Checking to see if clients are empty...
+We have 1 non-daemon clients, continuing serving connections.
+Taking next connection to: 61624
+Checking to see if clients are empty...
+No non-daemon clients connected after 3 min. Shutting down.
+Server socket thread exiting.
+0 clients open, will close them...
+All client sockets have been closed.
+Closing the 6664@Adi logs at Sat May 28 23:54:18 IDT 2016, goodbye.
