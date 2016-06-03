@@ -1,6 +1,7 @@
 package controllers;
 
 import java.io.IOException;
+import java.util.Calendar;
 import java.util.List;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -10,6 +11,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonParser;
 
+import algo.EmotionsManager;
 import algo.RecommendationManager;
 import model.Location;
 import model.Place;
@@ -18,35 +20,81 @@ import play.mvc.Controller;
 import play.mvc.Result;
 
 public class Application extends Controller {
-	
-	public Result recommandations(Integer userId, Long time, String longitude, String latitude, String js) {
-        
-		Location currentLocation = new Location(latitude, longitude);
-		
-		JsonNode types = request().body().asJson();
-		ObjectMapper mapper = new ObjectMapper();
-		try {
-			types = mapper.readTree("[{\"type\":\"Cafe\",\"count\":7}]");
-		} catch (JsonProcessingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		//return ok(types);
-		//JsonArray jaTypes = new JsonParser().parse(types).getAsJsonArray();
-		
-		List<Place> recommendedPlaces = RecommendationManager.getRecommendedPlaces(currentLocation, types, userId);
 
-		JsonNode result = Json.toJson(recommendedPlaces);
+	public Result recommandations() {
+		JsonNode data = request().body().asJson();
+		int userId = data.findPath("USER_ID").asInt();
+		Long time = data.findPath("TIME").asLong();
+		String lng = data.findPath("LNG").asText();
+		String lat = data.findPath("LAT").asText();
+		JsonNode types = data.findPath("TYPES");
 		
+		return recommandations(userId, time, lng, lat, types);
+	}
+	
+	public Result getRecommandations(Integer userId, Long time, String longitude, String latitude) {
+		return recommandations(userId,time,longitude,latitude,null);
+	}
+	
+
+	public Result recommandations(Integer userId, Long time, String longitude, String latitude, JsonNode types) {
+
+		Location currentLocation = new Location(latitude, longitude);
+
+		if (types == null) {
+			ObjectMapper mapper = new ObjectMapper();
+			try {
+				types = mapper.readTree("[{\"type\":\"Cafe\",\"count\":7}]");
+			} catch (JsonProcessingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+
+		Calendar cal = Calendar.getInstance();
+		cal.setTimeInMillis(time);
+		
+		List<Place> recommendedPlaces = 
+				RecommendationManager.getRecommendedPlaces(currentLocation, types, userId, cal);
+		JsonNode result = Json.toJson(recommendedPlaces);
 		return ok(result);
 	}
-    
+	
+	/**
+	 * gets a JSON ARRAY of places with it's google type id.
+	 * @return
+	 */
+	public Result dislike(){
+		JsonNode data = request().body().asJson();
+		//TODO: check if worked - return value...
+		EmotionsManager.setDislike(data);
+		return ok();
+		
+	}
+	
+	/**
+	 * gets a JSON ARRAY of places with it's google type id.
+	 * @return
+	 */
+	public Result like(){
+		JsonNode data = request().body().asJson();
+		//TODO: check if worked - return value...
+		EmotionsManager.setLike(data);
+		return ok();
+	}
+	
+	
+	public Result user(){
+		JsonNode data = request().body().asJson();
+		//TODO: create user
+		return ok();
+	}
+
 	public Result index() {
-        final JsonNode jsonResponse = Json.toJson("Your new application is ready.");
-        return ok(jsonResponse);
-    }
+		final JsonNode jsonResponse = Json.toJson("Your new application is ready.");
+		return ok(jsonResponse);
+	}
 }

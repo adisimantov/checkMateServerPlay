@@ -1,37 +1,43 @@
 package algo;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-
+import model.Interest;
 import model.Location;
 import model.MySqlDriver;
 import model.Place;
 import model.Type;
 import services.PlacesService;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+
 public class RecommendationManager {
 
-	private static final int RADIUS = 3000;
-	private static final double OTHER_PERCENTS = 0.05;
+	private static final int RADIUS = 1000;
+	private static final double OTHER_PERCENTS = 0.10;
 	private static final int TOTAL_RECOMMENDATION_AMOUNT = 30;
 
-	public static List<Place> getRecommendedPlaces(Location location, JsonNode facebookTypes, int userId) {
+	public static List<Place> getRecommendedPlaces(Location location, JsonNode facebookTypes, int userId,
+			Calendar time) {
 
 		// convertListJson(facebookTypes);
-
 		Map<Type, Integer> checkinTypes = new HashMap<Type, Integer>();
 		List<Place> currTypePlaces;
 		Map<Type, List<Place>> allPlaces = new HashMap<Type, List<Place>>();
-		List<String> noGoogleTypeFbList = new ArrayList<String>();
+		Map<Interest, Integer> allInterest = new HashMap<Interest, Integer>();
+		List<String> allFbTypeNames = new ArrayList<String>();
+		List<Integer> allGoogleTypeName = new ArrayList<Integer>();
 
 		// set the places service with the current location and the radius
 		PlacesService service = new PlacesService(location, RADIUS);
@@ -40,13 +46,16 @@ public class RecommendationManager {
 		RatingManager.getInstance().init(location, userId);
 
 		if (facebookTypes.isArray()) {
-			for (JsonNode typeJson : facebookTypes) {
-
+			for (int i = 0; i < facebookTypes.size(); i++) {
+				JsonNode typeJson = facebookTypes.get(i);
 				int count = typeJson.get("count").asInt();
 				String typeName = typeJson.get("type").asText();
 
 				// get the google type by the facebook type name
-				Type googleType = MySqlDriver.getGoogleType(typeName);
+				Type googleType = MySqlDriver.getGoogleTypeFromFacebook(typeName);
+
+				allFbTypeNames.add(typeName);
+				allGoogleTypeName.add(googleType.getId());
 
 				// if there is a google type linked to the current facebook type
 				if (googleType != null) {
@@ -73,21 +82,42 @@ public class RecommendationManager {
 					}
 					// if there is no google type, get the interest linked to
 					// the facebook type.
-				} else {
-					noGoogleTypeFbList.add(typeName);
 				}
 			}
 		}
 
-		// TODO: add the other random type lists
-		allPlaces.put(Type.other, new ArrayList<Place>());
+		List<Type> otherTypes = MySqlDriver.getGoogleTypesByInterestWithRate(allFbTypeNames, allGoogleTypeName, userId);
+		List<Type> chosenOther = new ArrayList<Type>();
+		Type randomType;
+		for (int i = 0; i < 3 && !otherTypes.isEmpty(); i++) {
+			randomType = getRandomType(otherTypes);
+			chosenOther.add(randomType);
+			otherTypes.remove(randomType);
+		}
+
+		List<Place> otherPlaces = new ArrayList<Place>();
+
+		for (Type googType : chosenOther) {
+			otherPlaces.addAll(service.getPlaces(googType.getName()));
+		}
+
+		if ((otherPlaces != null) && (!otherPlaces.isEmpty())) {
+			Collections.sort(otherPlaces, new Comparator<Place>() {
+				@Override
+				public int compare(Place place1, Place place2) {
+					return (place2.getRate().compareTo(place1.getRate()));
+				}
+			});
+		}
+
+		allPlaces.put(Type.other, otherPlaces);
 
 		Map<Type, Integer> finalAmounts = calcTypeAmount(checkinTypes);
 
 		List<Place> finalPlaces = new ArrayList<Place>();
 
 		for (Type type : finalAmounts.keySet()) {
-			finalPlaces.addAll(getTop(allPlaces.get(type), finalAmounts.get(type)));
+			finalPlaces.addAll(getTop(allPlaces.get(type), finalAmounts.get(type), time));
 		}
 
 		// TODO: extract the comparator
@@ -101,16 +131,58 @@ public class RecommendationManager {
 		return finalPlaces;
 	}
 
-	private static List<Place> getTop(List<Place> places, int amount) {
+	private static Type getRandomType(List<Type> googleTypes) {
+
+		// Compute the total weight of all items together
+		double totalWeight = 0.0d;
+		for (Type i : googleTypes) {
+			totalWeight += i.getRate();
+		}
+
+		// Now choose a random item
+		int randomIndex = -1;
+		double random = Math.random() * totalWeight;
+		for (int i = 0; i < googleTypes.size(); ++i) {
+			random -= googleTypes.get(i).getRate();
+			if (random <= 0.0d) {
+				randomIndex = i;
+				break;
+			}
+		}
+
+		return (randomIndex == -1 ? googleTypes.get(randomIndex) : null);
+	}
+
+	private static Map<Interest, Integer> sortByComparator(Map<Interest, Integer> unsortMap) {
+
+		// Convert Map to List
+		List<Map.Entry<Interest, Integer>> list = new LinkedList<Map.Entry<Interest, Integer>>(unsortMap.entrySet());
+
+		// Sort list with comparator, to compare the Map values
+		Collections.sort(list, new Comparator<Map.Entry<Interest, Integer>>() {
+			public int compare(Map.Entry<Interest, Integer> o1, Map.Entry<Interest, Integer> o2) {
+				return (o1.getValue()).compareTo(o2.getValue());
+			}
+		});
+
+		// Convert sorted map back to a Map
+		Map<Interest, Integer> sortedMap = new LinkedHashMap<Interest, Integer>();
+		for (Iterator<Map.Entry<Interest, Integer>> it = list.iterator(); it.hasNext();) {
+			Map.Entry<Interest, Integer> entry = it.next();
+			sortedMap.put(entry.getKey(), entry.getValue());
+		}
+		return sortedMap;
+	}
+
+	private static List<Place> getTop(List<Place> places, int amount, Calendar time) {
 
 		List<Place> top = new ArrayList<Place>();
-		if (places != null) {
-			for (Place place : places) {
-				if (place.getAllGoogleData()) {
-					top.add(place);
-					if (--amount <= 0) {
-						break;
-					}
+		for (Place place : places) {
+			place.fetchFullData();
+			if (place.isOpen(time)) {
+				top.add(place);
+				if (--amount <= 0) {
+					break;
 				}
 			}
 		}
@@ -149,7 +221,7 @@ public class RecommendationManager {
 			JsonObject typeJson = facebookTypes.get(i).getAsJsonObject();
 			int count = typeJson.get("count").getAsInt();
 			String typeName = typeJson.get("type").getAsString();
-			Type type = MySqlDriver.getGoogleType(typeName);
+			Type type = MySqlDriver.getGoogleTypeFromFacebook(typeName);
 			facebookTypesMap.put(type, count);
 		}
 		return facebookTypesMap;

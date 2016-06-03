@@ -37,7 +37,7 @@ public class RatingManager {
 		double distance = DistanceCalculator.distance(place.getLocation(),this.location);
 		place.setDistance(distance); 
 		rate *= (1/Math.pow(distance, 1.3));
-		rate *= (1/Math.pow(3, MySqlDriver.getDislikeCountByPlace(place.getId(), userId)));
+		rate *= (1/Math.pow(3, MySqlDriver.getDislikeCountByPlace(place.getPlaceId(), userId)));
 		//rate *= 0.3 *  MySqlDriver.getInstance().getDislikeCountByGoogType(place.get(), userId);  
 		return rate;
 	}
