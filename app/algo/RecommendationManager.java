@@ -96,9 +96,11 @@ public class RecommendationManager {
 		}
 
 		List<Place> otherPlaces = new ArrayList<Place>();
+		List<Place> curr;
 
 		for (Type googType : chosenOther) {
-			otherPlaces.addAll(service.getPlaces(googType.getName()));
+			curr = service.getPlaces(googType.getName());
+			otherPlaces.addAll(curr);
 		}
 
 		if ((otherPlaces != null) && (!otherPlaces.isEmpty())) {
@@ -142,15 +144,15 @@ public class RecommendationManager {
 		// Now choose a random item
 		int randomIndex = -1;
 		double random = Math.random() * totalWeight;
-		for (int i = 0; i < googleTypes.size(); ++i) {
+		for (int i = 0; i < googleTypes.size(); i++) {
 			random -= googleTypes.get(i).getRate();
 			if (random <= 0.0d) {
 				randomIndex = i;
 				break;
 			}
 		}
-
-		return (randomIndex == -1 ? googleTypes.get(randomIndex) : null);
+		 
+		return ((randomIndex == -1) ? null : googleTypes.get(randomIndex));
 	}
 
 	private static Map<Interest, Integer> sortByComparator(Map<Interest, Integer> unsortMap) {

@@ -382,7 +382,7 @@ public class MySqlDriver {
 	
     private static String createGoogleTypesByInterestWithRateQuery(int facebookTypeLen,int googleTypeLen) {
 		String s = 
-		"select gi.goog_type_id,gt.goog_type_name, ((interests.count +1) * power(1.2,e.like) * power(1/1.2,e.dislike)) as 'rate' " +
+		"select gi.goog_type_id,gt.goog_type_name, (interests.count +1) * IFNULL(power(1.2,e.like), 1) * IFNULL(power(1/1.2,e.dislike), 1) as 'rate' " +
 		"from google_to_interest gi JOIN " +
 		"	 google_types gt USING (goog_type_id) " +
 		"	 JOIN " +
@@ -398,7 +398,7 @@ public class MySqlDriver {
         s += queryBuilder.toString();
         
 		String s2 = "     group by fi.interest_type) interests USING (interest_type) " +
-		"     JOIN " +
+		"     LEFT JOIN " +
 		"     (select goog_type_id, COUNT(CASE WHEN like_ind = 1 then 1 ELSE NULL END) as 'like', COUNT(CASE WHEN like_ind = 0 then 1 ELSE NULL END) as 'dislike' " +
 		"     from emotions e " +
 		"     where e.user_id = ? " +
@@ -437,7 +437,7 @@ public class MySqlDriver {
 			}
 			
 			rs = preparedStatement.executeQuery();
-			if (rs.next()) {
+			while (rs.next()) {
 				t = new Type();
 				t.setId(rs.getInt("goog_type_id"));
 				t.setName(rs.getString("goog_type_name"));
