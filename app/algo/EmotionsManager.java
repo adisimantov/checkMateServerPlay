@@ -7,21 +7,25 @@ import model.MySqlDriver;
 
 public class EmotionsManager {
 
-	public static boolean setLike(JsonNode likes){
-		if (likes.isArray()) {
-		    for (final JsonNode objNode : likes) {
-		    }
+	public static boolean sendEmotions(JsonNode obj) {
+
+		JsonNode emotions = obj.findPath("EMOTIONS");
+		int userId = obj.findPath("USER_ID").asInt();
+
+		try {
+			if (emotions.isArray()) {
+				for (JsonNode jsonNode : emotions) {
+					char like = jsonNode.findPath("ACTION").asText().charAt(0);
+					String placeId = jsonNode.findPath("PLACE_ID").asText();
+					int googleType = jsonNode.findPath("GOOG_TYPE").asInt();
+					MySqlDriver.setEmotion(userId, like, placeId, googleType);
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return false;
 		}
-		
-		return true;
-	}
-	
-	public static boolean setDislike(JsonNode dislikes){
-		if (dislikes.isArray()) {
-		    for (final JsonNode objNode : dislikes) {
-		    }
-		}
-		
+
 		return true;
 	}
 }

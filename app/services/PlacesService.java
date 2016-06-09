@@ -15,6 +15,7 @@ import com.google.gson.JsonParser;
 
 import model.Location;
 import model.Place;
+import model.Type;
 
 public class PlacesService {
 	
@@ -28,10 +29,10 @@ public class PlacesService {
 
 	private static final String TYPE_SEARCH = "/nearbysearch";
 
-	public ArrayList<Place> getPlaces(String type) {
+	public ArrayList<Place> getPlaces(Type type) {
 
 		try {
-			String json = getPlacesJson(this.location, this.radius, type, null);
+			String json = getPlacesJson(this.location, this.radius, type.getName(), null);
 
 			ArrayList<Place> arrayList = new ArrayList<Place>();
 
@@ -44,7 +45,7 @@ public class PlacesService {
 				}
 				for (int i = 0; i < array.size(); i++) {
 					try {
-						Place place = new Place((JsonObject) array.get(i));
+						Place place = new Place((JsonObject) array.get(i), type);
 						arrayList.add(place);
 					} catch (Exception e) {
 						System.out.println(e.getMessage());
@@ -52,7 +53,7 @@ public class PlacesService {
 					}
 				}
 				if (nextPage != null) {
-					json = getPlacesJson(this.location, this.radius, type, nextPage);
+					json = getPlacesJson(this.location, this.radius, type.getName(), nextPage);
 				} else {
 					json = null;
 				}

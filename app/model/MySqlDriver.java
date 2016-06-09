@@ -198,15 +198,15 @@ public class MySqlDriver {
 		return setEmotion(userId, '1', placeId, googleType);
 	}
 
-	private static boolean setEmotion(int userId, char like, String placeId, int googleType) {
+	public static boolean setEmotion(int userId, char like, String placeId, int googleType) {
 
 		Connection conn = DB.getConnection();
 		boolean result = true;
 		PreparedStatement preparedStatement = null;
 		int count = 0;
 		try {
-			String s = "INSERT INTO 'checkmate'.'emotions' ('user_id', 'date', 'like_ind', 'goog_place_id', 'goog_type_id') "
-					+ " VALUES (?, CURRENT_TIMESTAMP, ?, ?, ?);";
+			String s = "INSERT INTO emotions (user_id, date, like_ind, goog_place_id, goog_type_id) "
+					+ " VALUES (?, CURRENT_TIMESTAMP, ?, ?, ?)";
 			preparedStatement = conn.prepareStatement(s);
 			preparedStatement.setInt(1, userId);
 			preparedStatement.setString(2, String.valueOf(like));

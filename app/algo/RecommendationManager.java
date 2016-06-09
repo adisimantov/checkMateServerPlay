@@ -24,7 +24,7 @@ import com.google.gson.JsonObject;
 
 public class RecommendationManager {
 
-	private static final int RADIUS = 1000;
+	private static final int RADIUS = 3000;
 	private static final double OTHER_PERCENTS = 0.10;
 	private static final int TOTAL_RECOMMENDATION_AMOUNT = 30;
 
@@ -55,17 +55,18 @@ public class RecommendationManager {
 				Type googleType = MySqlDriver.getGoogleTypeFromFacebook(typeName);
 
 				allFbTypeNames.add(typeName);
-				allGoogleTypeName.add(googleType.getId());
 
 				// if there is a google type linked to the current facebook type
 				if (googleType != null) {
+					allGoogleTypeName.add(googleType.getId());
+
 					if (!checkinTypes.containsKey(googleType)) {
 
 						// add the type with its amount
 						checkinTypes.put(googleType, count);
 
 						// get places list from google by the type.
-						currTypePlaces = service.getPlaces(googleType.getName());
+						currTypePlaces = service.getPlaces(googleType);
 						// if there are any places, sort them by the rating
 						// (desc)
 						if ((currTypePlaces != null) && (!currTypePlaces.isEmpty())) {
@@ -99,7 +100,7 @@ public class RecommendationManager {
 		List<Place> curr;
 
 		for (Type googType : chosenOther) {
-			curr = service.getPlaces(googType.getName());
+			curr = service.getPlaces(googType);
 			otherPlaces.addAll(curr);
 		}
 
@@ -151,7 +152,7 @@ public class RecommendationManager {
 				break;
 			}
 		}
-		 
+
 		return ((randomIndex == -1) ? null : googleTypes.get(randomIndex));
 	}
 
@@ -179,12 +180,14 @@ public class RecommendationManager {
 	private static List<Place> getTop(List<Place> places, int amount, Calendar time) {
 
 		List<Place> top = new ArrayList<Place>();
-		for (Place place : places) {
-			place.fetchFullData();
-			if (place.isOpen(time)) {
-				top.add(place);
-				if (--amount <= 0) {
-					break;
+		if (places != null) {
+			for (Place place : places) {
+				place.fetchFullData();
+				if (place.isOpen(time)) {
+					top.add(place);
+					if (--amount <= 0) {
+						break;
+					}
 				}
 			}
 		}

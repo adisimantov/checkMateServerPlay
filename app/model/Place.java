@@ -28,6 +28,7 @@ public class Place {
 	private float googleRating;
 	private List<Type> types = new ArrayList<Type>();
 	private double distance;
+	private Type chosenType;
 
 	private String address;
 	private String phoneNumber;
@@ -154,6 +155,14 @@ public class Place {
 		this.distance = distance;
 	}
 
+	public Type getChosenType() {
+		return chosenType;
+	}
+
+	public void setChosenType(Type chosenType) {
+		this.chosenType = chosenType;
+	}
+
 	public String getWebsite() {
 		return website;
 	}
@@ -194,10 +203,7 @@ public class Place {
 		JsonNode details = pds.getDetails();
 
 		this.setAddress(details.findPath("formatted_address").asText());
-		// JsonElement formatted_phone_number =
-		// details.get("formatted_phone_number");
 		this.setPhoneNumber(details.findPath("formatted_phone_number").asText());
-		// JsonElement website = details.get("website");
 		this.setUrl(details.findPath("website").asText());
 
 		JsonNode openingHours = details.findPath("opening_hours");
@@ -221,8 +227,9 @@ public class Place {
 		}
 	}
 
-	public Place(JsonObject placeJson) {
+	public Place(JsonObject placeJson, Type chosenType) {
 		try {
+			this.chosenType = chosenType;
 			JsonObject geometry = (JsonObject) placeJson.get("geometry");
 			JsonObject location = (JsonObject) geometry.get("location");
 			this.setLatitude(location.get("lat").getAsDouble());

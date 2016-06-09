@@ -4,8 +4,8 @@
 
 GET     /                           controllers.Application.index()
 
-POST	/Recommandations/	controllers.Application.recommandations()
+POST	/Recommandations	controllers.Application.recommandations()
 
 GET		/Recommand/:userId/:time/:longitude/:latitude	controllers.Application.getRecommandations(userId : Integer, time : Long, longitude : String, latitude : String)
 
-#GET		/Try/:userId/:time/:longitude/:latitude	controllers.Application.recommandations(userId : Integer, time : Long, longitude : String, latitude : String, types="")
+POST 	/Emotions			controllers.Application.emotions()

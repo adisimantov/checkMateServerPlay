@@ -16,7 +16,10 @@ import algo.RecommendationManager;
 import model.Location;
 import model.Place;
 import play.libs.Json;
+import play.mvc.BodyParser;
 import play.mvc.Controller;
+import play.mvc.Http.Request;
+import play.mvc.Http.RequestBody;
 import play.mvc.Result;
 
 public class Application extends Controller {
@@ -29,10 +32,13 @@ public class Application extends Controller {
 		String lat = data.findPath("LAT").asText();
 		JsonNode types = data.findPath("TYPES");
 		
-		return recommandations(userId, time, lng, lat, types);
+		return recommandations(userId, time, lng, lat, types);		
 	}
 	
 	public Result getRecommandations(Integer userId, Long time, String longitude, String latitude) {
+		
+		JsonNode data = request().body().asJson();
+		System.out.println(data);
 		return recommandations(userId,time,longitude,latitude,null);
 	}
 	
@@ -67,25 +73,12 @@ public class Application extends Controller {
 	 * gets a JSON ARRAY of places with it's google type id.
 	 * @return
 	 */
-	public Result dislike(){
-		JsonNode data = request().body().asJson();
-		//TODO: check if worked - return value...
-		EmotionsManager.setDislike(data);
-		return ok();
-		
-	}
 	
-	/**
-	 * gets a JSON ARRAY of places with it's google type id.
-	 * @return
-	 */
-	public Result like(){
+	public Result emotions(){
 		JsonNode data = request().body().asJson();
-		//TODO: check if worked - return value...
-		EmotionsManager.setLike(data);
+		EmotionsManager.sendEmotions(data);
 		return ok();
 	}
-	
 	
 	public Result user(){
 		JsonNode data = request().body().asJson();
