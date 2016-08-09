@@ -5,24 +5,35 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-import javax.inject.Inject;
-
-import play.db.DB;
 import play.db.Database;
+import play.db.Databases;
 
 // Notice, do not import com.mysql.jdbc.*
 // or you will have problems!
 
 public class MySqlDriver {
+    private static final Map<String, String> params;
+    static
+    {
+    	params = new HashMap<String, String>();
+    	params.put("user", "admina45B3wQ");
+    	params.put("password", "t9XTASkPXhYv");
+    }
+	
+	public static final Database database = Databases.createFrom(
+			"com.mysql.jdbc.Driver",
+			"jdbc:mysql://127.0.0.1:3306/checkmatep",
+			params
+	);
 
-	@Inject
-	Database db;
 
 	// TODO: check if not used at anything else!!!!!
 	public static Type getGoogleType(String googleType) {
-		Connection conn = DB.getConnection();
+		Connection conn = database.getConnection();
 
 		ResultSet rs = null;
 		PreparedStatement preparedStatement = null;
@@ -57,7 +68,7 @@ public class MySqlDriver {
 
 	public static Type getFacebookType(String facebookType) {
 
-		Connection conn = DB.getConnection();
+		Connection conn = database.getConnection();
 
 		ResultSet rs = null;
 		PreparedStatement preparedStatement = null;
@@ -91,7 +102,7 @@ public class MySqlDriver {
 	}
 
 	public static Type getGoogleTypeFromFacebook(String facebookType) {
-		Connection conn = DB.getConnection();
+		Connection conn = database.getConnection();
 
 		ResultSet rs = null;
 		PreparedStatement preparedStatement = null;
@@ -129,7 +140,7 @@ public class MySqlDriver {
 
 	public static int getDislikeCountByGoogType(int googTypeId, int userId) {
 
-		Connection conn = DB.getConnection();
+		Connection conn = database.getConnection();
 
 		ResultSet rs = null;
 		PreparedStatement preparedStatement = null;
@@ -161,7 +172,7 @@ public class MySqlDriver {
 
 	public static int getDislikeCountByPlace(String placeId, int userId) {
 
-		Connection conn = DB.getConnection();
+		Connection conn = database.getConnection();
 		ResultSet rs = null;
 		PreparedStatement preparedStatement = null;
 		int count = 0;
@@ -200,7 +211,7 @@ public class MySqlDriver {
 
 	public static boolean setEmotion(int userId, char like, String placeId, int googleType) {
 
-		Connection conn = DB.getConnection();
+		Connection conn = database.getConnection();
 		boolean result = true;
 		PreparedStatement preparedStatement = null;
 		int count = 0;
@@ -233,7 +244,7 @@ public class MySqlDriver {
 	
 	public static List<Type> getGoogleTypesByInterest(int interest) {
 		
-		Connection conn = DB.getConnection();
+		Connection conn = database.getConnection();
 		ResultSet rs = null;
 		PreparedStatement preparedStatement = null;
 		Type t = null;
@@ -270,7 +281,7 @@ public class MySqlDriver {
 	
 	public static List<Type> getFacebookTypesByInterest(int interest) {
 
-		Connection conn = DB.getConnection();
+		Connection conn = database.getConnection();
 		ResultSet rs = null;
 		PreparedStatement preparedStatement = null;
 		Type t = null;
@@ -307,7 +318,7 @@ public class MySqlDriver {
 			
 	public static List<Interest> getInterestsByGoogleType(int googleType) {
 
-		Connection conn = DB.getConnection();
+		Connection conn = database.getConnection();
 		ResultSet rs = null;
 		PreparedStatement preparedStatement = null;
 		Interest t = null;
@@ -344,7 +355,7 @@ public class MySqlDriver {
 	
 	public static List<Interest> getInterestsByFacebookType(String facebookType) {
 
-		Connection conn = DB.getConnection();
+		Connection conn = database.getConnection();
 		ResultSet rs = null;
 		PreparedStatement preparedStatement = null;
 		Interest t = null;
@@ -417,7 +428,7 @@ public class MySqlDriver {
     
 	public static List<Type> getGoogleTypesByInterestWithRate(List<String> facebookTypes,List<Integer> googleTypes,int userID) {
 
-		Connection conn = DB.getConnection();
+		Connection conn = database.getConnection();
 		ResultSet rs = null;
 		PreparedStatement preparedStatement = null;
 		Type t = null;
@@ -464,6 +475,4 @@ public class MySqlDriver {
 		
 		return null;
 	}
-
-
 }

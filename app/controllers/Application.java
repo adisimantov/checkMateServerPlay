@@ -4,23 +4,17 @@ import java.io.IOException;
 import java.util.Calendar;
 import java.util.List;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonParser;
-
-import algo.EmotionsManager;
-import algo.RecommendationManager;
 import model.Location;
 import model.Place;
 import play.libs.Json;
-import play.mvc.BodyParser;
 import play.mvc.Controller;
-import play.mvc.Http.Request;
-import play.mvc.Http.RequestBody;
 import play.mvc.Result;
+import algo.EmotionsManager;
+import algo.RecommendationManager;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class Application extends Controller {
 

@@ -1,9 +1,8 @@
 package algo;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-
 import model.MySqlDriver;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 public class EmotionsManager {
 

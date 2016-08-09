@@ -1,10 +1,19 @@
 package model;
 
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import services.FacebookPlace;
+import services.LoggedInFacebookClient;
+import services.PlaceDetailsService;
+import algo.RatingManager;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.gson.JsonArray;
@@ -14,11 +23,6 @@ import com.google.gson.JsonParseException;
 import com.restfb.Connection;
 import com.restfb.FacebookClient;
 import com.restfb.Parameter;
-
-import algo.RatingManager;
-import services.FacebookPlace;
-import services.LoggedInFacebookClient;
-import services.PlaceDetailsService;
 
 public class Place {
 	private String place_id;
@@ -261,16 +265,36 @@ public class Place {
 		}
 	}
 
-	// TODO: check if the place is open at the selected time
-	public boolean isOpen(Calendar cal) {
+	public boolean isOpen(Calendar chosenDate) {
 		if (this.openHours != null && !this.openHours.isNull()) {
-			int day = cal.get(Calendar.DAY_OF_WEEK);
+			int day = chosenDate.get(Calendar.DAY_OF_WEEK);
 			JsonNode dayHours = this.openHours.get(day);
 			if (dayHours != null && !dayHours.isNull()) {
-				JsonNode open = dayHours.findPath("open");
-				JsonNode closed = dayHours.findPath("close");
+				DateFormat format = new SimpleDateFormat("HHmm");
+				
+				JsonNode openTime = dayHours.findPath("open").findPath("time");
+				JsonNode closedTime = dayHours.findPath("close").findPath("time");
+				try {
+					Calendar calendar = Calendar.getInstance();
+					Date open = format.parse(openTime.asText());
+					calendar.setTime(open);
+					long openMiliseconds = calendar.getTimeInMillis();
+					
+					Date closed =  format.parse(closedTime.asText());
+					calendar.setTime(closed);
+					long closedMiliseconds = calendar.getTimeInMillis();
+					
+					// Place is closed at wanted time
+					if(!(chosenDate.getTimeInMillis() >= openMiliseconds && 
+						 chosenDate.getTimeInMillis() <= closedMiliseconds )) {
+						return false;
+					}
+				} catch (ParseException e) {
+					return false;
+				}
 			}
 		}
+
 		return true;
 	}
 

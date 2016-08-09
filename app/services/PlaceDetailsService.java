@@ -9,12 +9,6 @@ import java.net.URL;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-
-import model.Location;
-import model.Place;
 
 public class PlaceDetailsService {
 
