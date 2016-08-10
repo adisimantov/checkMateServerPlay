@@ -16,6 +16,8 @@ import algo.RecommendationManager;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.google.gson.JsonArray;
 
 public class Application extends Controller {
 
@@ -34,6 +36,13 @@ public class Application extends Controller {
 		} else {
 			return internalServerError();
 		}
+	}
+	
+	public Result saveCheckins() {
+		JsonNode data = request().body().asJson();
+		ArrayNode  userId = (ArrayNode) data.findPath("CHECKINS");
+		System.out.println(userId);
+		return ok();
 	}
 	
 	public Result recommandations() {

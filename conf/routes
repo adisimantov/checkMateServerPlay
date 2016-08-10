@@ -10,4 +10,6 @@ GET		/Recommand/:userId/:time/:longitude/:latitude	controllers.Application.getRe
 
 POST 	/Emotions			controllers.Application.emotions()
 
-POST	/Recommandations	controllers.Application.login()
+POST	/Login	controllers.Application.login()
+
+POST	/Checkins	controllers.Application.saveCheckins()
