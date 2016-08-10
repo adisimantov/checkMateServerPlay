@@ -9,3 +9,5 @@ POST	/Recommandations	controllers.Application.recommandations()
 GET		/Recommand/:userId/:time/:longitude/:latitude	controllers.Application.getRecommandations(userId : Integer, time : Long, longitude : String, latitude : String)
 
 POST 	/Emotions			controllers.Application.emotions()
+
+POST	/Recommandations	controllers.Application.login()

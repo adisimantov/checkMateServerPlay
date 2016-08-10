@@ -5,6 +5,7 @@ import java.util.Calendar;
 import java.util.List;
 
 import model.Location;
+import model.MySqlDriver;
 import model.Place;
 import play.libs.Json;
 import play.mvc.Controller;
@@ -18,6 +19,23 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class Application extends Controller {
 
+	public Result login() {
+		JsonNode data = request().body().asJson();
+		String userId = data.findPath("USER_ID").asText();
+		String token = data.findPath("TOKEN").asText();
+		boolean result = true;
+		
+		if (MySqlDriver.getUser(userId) == null) {
+			result = MySqlDriver.setUser(userId, token);
+		}
+		
+		if (result) {
+			return ok();
+		} else {
+			return internalServerError();
+		}
+	}
+	
 	public Result recommandations() {
 		JsonNode data = request().body().asJson();
 		int userId = data.findPath("USER_ID").asInt();
@@ -46,10 +64,8 @@ public class Application extends Controller {
 			try {
 				types = mapper.readTree("[{\"type\":\"Cafe\",\"count\":7}]");
 			} catch (JsonProcessingException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -67,16 +83,9 @@ public class Application extends Controller {
 	 * gets a JSON ARRAY of places with it's google type id.
 	 * @return
 	 */
-	
 	public Result emotions(){
 		JsonNode data = request().body().asJson();
 		EmotionsManager.sendEmotions(data);
-		return ok();
-	}
-	
-	public Result user(){
-		JsonNode data = request().body().asJson();
-		//TODO: create user
 		return ok();
 	}
 

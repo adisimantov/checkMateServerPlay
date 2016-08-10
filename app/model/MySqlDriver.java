@@ -209,6 +209,67 @@ public class MySqlDriver {
 		return setEmotion(userId, '1', placeId, googleType);
 	}
 
+	public static User getUser(String userId) {
+		Connection conn = database.getConnection();
+		ResultSet rs = null;
+		PreparedStatement preparedStatement = null;
+		User user = null;
+		try {
+ 			String s = " SELECT u.user_id, u.token"
+					 + " FROM users u"
+					 + " WHERE user_id = ?";
+			preparedStatement = conn.prepareStatement(s);
+			preparedStatement.setString(1, userId);
+			rs = preparedStatement.executeQuery();
+			if (rs.next()) {
+				user = new User();
+				user.setUserId(rs.getString("user_id"));
+				user.setToken(rs.getString("token"));
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				rs.close();
+				preparedStatement.close();
+				conn.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+
+		return user;
+	}
+	
+	public static boolean setUser(String userId, String token) {
+		Connection conn = database.getConnection();
+		boolean result = true;
+		PreparedStatement preparedStatement = null;
+		int count = 0;
+		try {
+			String s = "INSERT INTO users (user_id, token) "
+					+ " VALUES (?, ?)";
+			preparedStatement = conn.prepareStatement(s);
+			preparedStatement.setString(1, userId);
+			preparedStatement.setString(2, token);
+			count = preparedStatement.executeUpdate();
+			if (count == 0) {
+				result = false;
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+			result = false;
+		} finally {
+			try {
+				preparedStatement.close();
+				conn.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+		return result;
+	}
 	public static boolean setEmotion(int userId, char like, String placeId, int googleType) {
 
 		Connection conn = database.getConnection();
