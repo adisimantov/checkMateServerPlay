@@ -9,7 +9,7 @@ public class EmotionsManager {
 	public static boolean sendEmotions(JsonNode obj) {
 
 		JsonNode emotions = obj.findPath("EMOTIONS");
-		int userId = obj.findPath("USER_ID").asInt();
+		String userId = obj.findPath("USER_ID").asText();
 
 		try {
 			if (emotions.isArray()) {

@@ -4,10 +4,15 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.restfb.types.FacebookType;
 
 import play.db.Database;
 import play.db.Databases;
@@ -22,6 +27,8 @@ public class MySqlDriver {
     	params = new HashMap<String, String>();
     	params.put("user", "admina45B3wQ");
     	params.put("password", "t9XTASkPXhYv");
+    	params.put("useUnicode", "true");
+    	params.put("characterEncoding", "utf8");
     }
 	
 	public static final Database database = Databases.createFrom(
@@ -138,7 +145,7 @@ public class MySqlDriver {
 
 	}
 
-	public static int getDislikeCountByGoogType(int googTypeId, int userId) {
+	public static int getDislikeCountByGoogType(int googTypeId, String userId) {
 
 		Connection conn = database.getConnection();
 
@@ -149,7 +156,7 @@ public class MySqlDriver {
 			String s = "SELECT COUNT(*) FROM emotions WHERE user_id = ? and goog_type_id = ? and  'like_ind' = 0 and date > (CURRENT_TIMESTAMP - 30)";
 			preparedStatement = conn.prepareStatement(s);
 			preparedStatement.setInt(1, googTypeId);
-			preparedStatement.setInt(2, userId);
+			preparedStatement.setString(2, userId);
 			rs = preparedStatement.executeQuery();
 			if (rs.next()) {
 				count = rs.getInt(1);
@@ -170,7 +177,7 @@ public class MySqlDriver {
 		return count;
 	}
 
-	public static int getDislikeCountByPlace(String placeId, int userId) {
+	public static int getDislikeCountByPlace(String placeId, String userId) {
 
 		Connection conn = database.getConnection();
 		ResultSet rs = null;
@@ -179,7 +186,7 @@ public class MySqlDriver {
 		try {
 			String s = "SELECT COUNT(*) FROM emotions WHERE user_id = ? and goog_place_id = ? and 'like_ind' = 0 and date BETWEEN NOW() - INTERVAL 30 DAY AND NOW()";
 			preparedStatement = conn.prepareStatement(s);
-			preparedStatement.setInt(1, userId);
+			preparedStatement.setString(1, userId);
 			preparedStatement.setString(2, placeId);
 			rs = preparedStatement.executeQuery();
 			if (rs.next()) {
@@ -201,11 +208,11 @@ public class MySqlDriver {
 		return count;
 	}
 
-	public static boolean setDislike(int userId, String placeId, int googleType) {
+	public static boolean setDislike(String userId, String placeId, int googleType) {
 		return setEmotion(userId, '0', placeId, googleType);
 	}
 
-	public static boolean setLike(int userId, String placeId, int googleType) {
+	public static boolean setLike(String userId, String placeId, int googleType) {
 		return setEmotion(userId, '1', placeId, googleType);
 	}
 
@@ -270,7 +277,7 @@ public class MySqlDriver {
 		}
 		return result;
 	}
-	public static boolean setEmotion(int userId, char like, String placeId, int googleType) {
+	public static boolean setEmotion(String userId, char like, String placeId, int googleType) {
 
 		Connection conn = database.getConnection();
 		boolean result = true;
@@ -280,7 +287,7 @@ public class MySqlDriver {
 			String s = "INSERT INTO emotions (user_id, date, like_ind, goog_place_id, goog_type_id) "
 					+ " VALUES (?, CURRENT_TIMESTAMP, ?, ?, ?)";
 			preparedStatement = conn.prepareStatement(s);
-			preparedStatement.setInt(1, userId);
+			preparedStatement.setString(1, userId);
 			preparedStatement.setString(2, String.valueOf(like));
 			preparedStatement.setString(3, placeId);
 			preparedStatement.setInt(4, googleType);
@@ -487,7 +494,7 @@ public class MySqlDriver {
         return s+s2;
     }
     
-	public static List<Type> getGoogleTypesByInterestWithRate(List<String> facebookTypes,List<Integer> googleTypes,int userID) {
+	public static List<Type> getGoogleTypesByInterestWithRate(List<String> facebookTypes,List<Integer> googleTypes,String userID) {
 
 		Connection conn = database.getConnection();
 		ResultSet rs = null;
@@ -502,7 +509,7 @@ public class MySqlDriver {
 				preparedStatement.setString(i, facebookTypes.get(i- 1));
 			}
 			
-			preparedStatement.setInt(facebookTypes.size() + 1, userID);
+			preparedStatement.setString(facebookTypes.size() + 1, userID);
 			
 			for(int i = facebookTypes.size() + 2,j=0; j < googleTypes.size(); i++,j++){
 				preparedStatement.setInt(i, googleTypes.get(j));
@@ -535,5 +542,71 @@ public class MySqlDriver {
 	public List<Type> getTypesByFacebookInterests(Iterable<String> inSubSelect, Iterable<String> notIn){
 		
 		return null;
+	}
+	
+	public static boolean saveCheckin(String user_id,
+							String checkin_id,
+							Timestamp create_time,
+							String place_id,
+							String name,
+							double latitude,
+							double longitude,
+							String street,
+							String city,
+							String country,
+							String zip,
+							float rating,
+							List<FacebookType> types) {
+		
+		Connection conn = database.getConnection();
+		boolean result = true;
+		PreparedStatement preparedStatement = null;
+		int count = 0;
+		try {
+			String s = "INSERT INTO checkins (user_id,checkin_id,created_time,place_id,name,latitude,longitude,street,city,country,zip,rating) "
+					+ " VALUES (?, ?, ?, ?, ?, ? , ?, ?, ?, ?, ?, ?)";
+			preparedStatement = conn.prepareStatement(s);
+			preparedStatement.setString(1, user_id);
+			preparedStatement.setString(2, checkin_id);
+			preparedStatement.setTimestamp(3, create_time);
+			preparedStatement.setString(4, place_id);
+			preparedStatement.setString(5, name);
+			preparedStatement.setDouble(6, latitude);
+			preparedStatement.setDouble(7, longitude);
+			preparedStatement.setString(8, street);
+			preparedStatement.setString(9, city);
+			preparedStatement.setString(10, country);
+			preparedStatement.setString(11, zip);
+			preparedStatement.setFloat(12, rating);
+			count = preparedStatement.executeUpdate();
+			if (count == 0) {
+				result = false;
+			}
+			preparedStatement.close();
+			
+			s = "INSERT INTO checkin_types (checkin_id,type_id,name) "
+				+ " VALUES (?, ?, ?)";
+			preparedStatement = conn.prepareStatement(s);
+
+			for (FacebookType type :types) {
+				preparedStatement.clearParameters();
+				preparedStatement.setString(1, checkin_id);
+				preparedStatement.setString(2, type.getId());
+				preparedStatement.setString(3, type.getType());
+				count = preparedStatement.executeUpdate();
+			}
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+			result = false;
+		} finally {
+			try {
+				preparedStatement.close();
+				conn.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+		return result;
 	}
 }

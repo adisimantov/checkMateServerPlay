@@ -2,14 +2,16 @@
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
 
-GET     /                           controllers.Application.index()
+GET     /	controllers.Application.index()
 
 POST	/Recommandations	controllers.Application.recommandations()
 
-GET		/Recommand/:userId/:time/:longitude/:latitude	controllers.Application.getRecommandations(userId : Integer, time : Long, longitude : String, latitude : String)
+GET		/Recommand/:userId/:time/:longitude/:latitude	controllers.Application.getRecommandations(userId : String, time : Long, longitude : String, latitude : String)
 
-POST 	/Emotions			controllers.Application.emotions()
+POST 	/Emotions	controllers.Application.emotions()
 
 POST	/Login	controllers.Application.login()
 
 POST	/Checkins	controllers.Application.saveCheckins()
+
+GET	/anna	controllers.Application.checkins()
