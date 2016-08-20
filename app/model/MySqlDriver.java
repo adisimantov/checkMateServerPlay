@@ -5,6 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -28,7 +29,7 @@ public class MySqlDriver {
     	params.put("user", "admina45B3wQ");
     	params.put("password", "t9XTASkPXhYv");
     	params.put("useUnicode", "true");
-    	params.put("characterEncoding", "utf8");
+    	params.put("characterEncoding", "UTF-8");
     }
 	
 	public static final Database database = Databases.createFrom(
@@ -555,29 +556,45 @@ public class MySqlDriver {
 							String city,
 							String country,
 							String zip,
-							float rating,
+							String main_category,
+							Integer checkin_count,
+							Long likes,
+							String price_range,
 							List<FacebookType> types) {
 		
 		Connection conn = database.getConnection();
 		boolean result = true;
-		PreparedStatement preparedStatement = null;
 		int count = 0;
+		PreparedStatement preparedStatement = null;
+		
 		try {
-			String s = "INSERT INTO checkins (user_id,checkin_id,created_time,place_id,name,latitude,longitude,street,city,country,zip,rating) "
-					+ " VALUES (?, ?, ?, ?, ?, ? , ?, ?, ?, ?, ?, ?)";
+			String s = "INSERT INTO checkins (user_id,checkin_id,created_time,place_id,name,latitude,longitude,street,city,country,zip,main_category,checkin_count,likes,price_range) "
+					+ " VALUES (?, ?, ?, ?, ?, ? , ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 			preparedStatement = conn.prepareStatement(s);
 			preparedStatement.setString(1, user_id);
 			preparedStatement.setString(2, checkin_id);
 			preparedStatement.setTimestamp(3, create_time);
 			preparedStatement.setString(4, place_id);
-			preparedStatement.setString(5, name);
+			preparedStatement.setNString(5, name);
 			preparedStatement.setDouble(6, latitude);
 			preparedStatement.setDouble(7, longitude);
-			preparedStatement.setString(8, street);
-			preparedStatement.setString(9, city);
-			preparedStatement.setString(10, country);
+			preparedStatement.setNString(8, street);
+			preparedStatement.setNString(9, city);
+			preparedStatement.setNString(10, country);
 			preparedStatement.setString(11, zip);
-			preparedStatement.setFloat(12, rating);
+			preparedStatement.setString(12, main_category);
+			if (checkin_count == null) {
+				preparedStatement.setNull(13, Types.BIGINT);
+			} else {
+				preparedStatement.setLong(13, checkin_count);
+			}
+			if (likes == null) {
+				preparedStatement.setNull(14, Types.BIGINT);
+			} else {
+				preparedStatement.setLong(14, likes);
+			}
+			preparedStatement.setString(15, price_range);
+			
 			count = preparedStatement.executeUpdate();
 			if (count == 0) {
 				result = false;
@@ -608,5 +625,35 @@ public class MySqlDriver {
 			}
 		}
 		return result;
+	}
+	
+	public static void getChecksins() {
+
+		Connection conn = database.getConnection();
+		ResultSet rs = null;
+		PreparedStatement preparedStatement = null;
+		try {
+ 			String s = " SELECT i.name,i.street"
+					 + " FROM checkins i";
+			preparedStatement = conn.prepareStatement(s);
+			rs = preparedStatement.executeQuery();
+			while (rs.next()) {
+				String name = rs.getString("name");
+				System.out.println(name);
+				String street = rs.getString("street");
+				System.out.println(street);
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				rs.close();
+				preparedStatement.close();
+				conn.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 }
