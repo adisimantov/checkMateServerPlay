@@ -568,8 +568,8 @@ public class MySqlDriver {
 		PreparedStatement preparedStatement = null;
 		
 		try {
-			String s = "INSERT INTO checkins (user_id,checkin_id,created_time,place_id,name,latitude,longitude,street,city,country,zip,main_category,checkin_count,likes,price_range) "
-					+ " VALUES (?, ?, ?, ?, ?, ? , ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+			String s = "INSERT INTO checkins (user_id,checkin_id,created_time,place_id,name,latitude,longitude,street,city,country,zip,main_category,checkin_count,likes,price_range,price_range_code) "
+					+ " VALUES (?, ?, ?, ?, ?, ? , ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 			preparedStatement = conn.prepareStatement(s);
 			preparedStatement.setString(1, user_id);
 			preparedStatement.setString(2, checkin_id);
@@ -594,7 +594,17 @@ public class MySqlDriver {
 				preparedStatement.setLong(14, likes);
 			}
 			preparedStatement.setString(15, price_range);
-			
+			int price_range_code = 0;
+			if (price_range != null) {
+				if (price_range.contains("$$$")) {
+					price_range_code = 3;
+				} else if (price_range.contains("$$")) {
+					price_range_code = 2;
+				} else if (price_range.contains("$")){
+					price_range_code = 1;
+				}
+			}
+			preparedStatement.setInt(16, price_range_code);
 			count = preparedStatement.executeUpdate();
 			if (count == 0) {
 				result = false;
