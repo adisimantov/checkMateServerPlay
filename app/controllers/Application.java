@@ -9,13 +9,15 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
+import org.joda.time.LocalDate;
+import org.joda.time.Years;
+
 import model.Location;
 import model.MySqlDriver;
 import model.Place;
 import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Result;
-import services.FacebookPlace;
 import services.LoggedInFacebookClient;
 import services.PlaceFacebookClient;
 import algo.EmotionsManager;
@@ -25,10 +27,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.restfb.Connection;
 import com.restfb.FacebookClient;
 import com.restfb.Parameter;
 import com.restfb.types.FacebookType;
+import com.restfb.types.User;
 
 public class Application extends Controller {
 
@@ -39,7 +41,26 @@ public class Application extends Controller {
 		boolean result = true;
 		
 		if (MySqlDriver.getUser(userId) == null) {
-			result = MySqlDriver.setUser(userId, token);
+			FacebookClient facebookClient = new LoggedInFacebookClient();
+			User getUser = 
+					facebookClient.fetchObject(userId , User.class,Parameter.with("fields", "id,gender,birthday"));
+			
+			String gender = null;
+			if (getUser.getGender() != null) {
+				if ("female".equals(getUser.getGender())) {
+					gender = "f";
+				} else if ("male".equals(getUser.getGender())){
+					gender = "m";
+				}
+			}
+			
+			Integer age = null;
+			if (getUser.getBirthdayAsDate() != null) {
+				LocalDate now = new LocalDate();
+				LocalDate birthday = new LocalDate(getUser.getBirthdayAsDate());
+				age = Years.yearsBetween(birthday, now).getYears();
+			}
+			result = MySqlDriver.setUser(userId, token, age, gender);
 		}
 		
 		if (result) {

@@ -250,17 +250,23 @@ public class MySqlDriver {
 		return user;
 	}
 	
-	public static boolean setUser(String userId, String token) {
+	public static boolean setUser(String userId, String token, Integer age, String gender) {
 		Connection conn = database.getConnection();
 		boolean result = true;
 		PreparedStatement preparedStatement = null;
 		int count = 0;
 		try {
-			String s = "INSERT INTO users (user_id, token) "
-					+ " VALUES (?, ?)";
+			String s = "INSERT INTO users (user_id, token, age, gender) "
+					+ " VALUES (?, ?, ?, ?)";
 			preparedStatement = conn.prepareStatement(s);
 			preparedStatement.setString(1, userId);
 			preparedStatement.setString(2, token);
+			if (age != null) {
+				preparedStatement.setInt(3, age);
+			} else {
+				preparedStatement.setNull(3, Types.INTEGER);
+			}
+			preparedStatement.setString(4, gender);
 			count = preparedStatement.executeUpdate();
 			if (count == 0) {
 				result = false;
