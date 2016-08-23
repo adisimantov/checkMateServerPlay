@@ -7,7 +7,7 @@ import model.Place;
 public class RatingManager {
 
 	private Location location;
-	private Integer userId;
+	private String userId;
 	private static RatingManager instance;
 	
 	private RatingManager() {
@@ -21,7 +21,7 @@ public class RatingManager {
 		return instance;
 	}
 	
-	public void init(Location location, Integer userId){
+	public void init(Location location, String userId){
 		this.location = location;
 		this.userId = userId;
 	}

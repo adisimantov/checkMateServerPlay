@@ -28,7 +28,7 @@ public class RecommendationManager {
 	private static final double OTHER_PERCENTS = 0.10;
 	private static final int TOTAL_RECOMMENDATION_AMOUNT = 30;
 
-	public static List<Place> getRecommendedPlaces(Location location, JsonNode facebookTypes, int userId,
+	public static List<Place> getRecommendedPlaces(Location location, JsonNode facebookTypes, String userId,
 			Calendar time) {
 		
 		// convertListJson(facebookTypes);
