@@ -7,16 +7,14 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.restfb.types.FacebookType;
-
 import play.db.Database;
 import play.db.Databases;
+
+import com.restfb.types.FacebookType;
 
 // Notice, do not import com.mysql.jdbc.*
 // or you will have problems!
@@ -369,7 +367,7 @@ public class MySqlDriver {
 			preparedStatement = conn.prepareStatement(s);
 			preparedStatement.setInt(1, interest);
 			rs = preparedStatement.executeQuery();
-			if (rs.next()) {
+			while (rs.next()) {
 				t = new Type();
 				t.setId(rs.getInt("fb_type_id"));
 				t.setName(rs.getString("fb_type_name"));
@@ -406,7 +404,7 @@ public class MySqlDriver {
 			preparedStatement = conn.prepareStatement(s);
 			preparedStatement.setInt(1, googleType);
 			rs = preparedStatement.executeQuery();
-			if (rs.next()) {
+			while (rs.next()) {
 				t = new Interest();
 				t.setId(rs.getInt("interest_type"));
 				t.setName(rs.getString("interest_name"));
@@ -444,7 +442,7 @@ public class MySqlDriver {
 			preparedStatement = conn.prepareStatement(s);
 			preparedStatement.setString(1, facebookType);
 			rs = preparedStatement.executeQuery();
-			if (rs.next()) {
+			while (rs.next()) {
 				t = new Interest();
 				t.setId(rs.getInt("interest_type"));
 				t.setName(rs.getString("interest_name"));
@@ -566,6 +564,7 @@ public class MySqlDriver {
 							Integer checkin_count,
 							Long likes,
 							String price_range,
+							String goog_place_id,
 							List<FacebookType> types) {
 		
 		Connection conn = database.getConnection();
@@ -574,8 +573,8 @@ public class MySqlDriver {
 		PreparedStatement preparedStatement = null;
 		
 		try {
-			String s = "INSERT INTO checkins (user_id,checkin_id,created_time,place_id,name,latitude,longitude,street,city,country,zip,main_category,checkin_count,likes,price_range,price_range_code) "
-					+ " VALUES (?, ?, ?, ?, ?, ? , ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+			String s = "INSERT INTO checkins (user_id,checkin_id,created_time,place_id,name,latitude,longitude,street,city,country,zip,main_category,checkin_count,likes,price_range,price_range_code, goog_place_id) "
+					+ " VALUES (?, ?, ?, ?, ?, ? , ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 			preparedStatement = conn.prepareStatement(s);
 			preparedStatement.setString(1, user_id);
 			preparedStatement.setString(2, checkin_id);
@@ -611,6 +610,7 @@ public class MySqlDriver {
 				}
 			}
 			preparedStatement.setInt(16, price_range_code);
+			preparedStatement.setString(17, goog_place_id);
 			count = preparedStatement.executeUpdate();
 			if (count == 0) {
 				result = false;
@@ -643,21 +643,29 @@ public class MySqlDriver {
 		return result;
 	}
 	
-	public static void getChecksins() {
-
+	
+	
+	public static List<User> getUsers() {
+		
 		Connection conn = database.getConnection();
 		ResultSet rs = null;
 		PreparedStatement preparedStatement = null;
+		User u = null;
+		List<User> users = new ArrayList<User>();
 		try {
- 			String s = " SELECT i.name,i.street"
-					 + " FROM checkins i";
+ 			String s = " SELECT u.user_id, u.token, u.age, u.gender"
+					 + " FROM users u";
 			preparedStatement = conn.prepareStatement(s);
 			rs = preparedStatement.executeQuery();
 			while (rs.next()) {
-				String name = rs.getString("name");
-				System.out.println(name);
-				String street = rs.getString("street");
-				System.out.println(street);
+				u = new User();
+				u.setUserId(rs.getString("user_id"));
+				u.setToken(rs.getString("token"));
+				u.setAge(rs.getInt("age"));
+				if (rs.getString("gender") != null){
+					u.setGender(rs.getString("gender").charAt(0));
+				}
+				users.add(u);
 			}
 
 		} catch (SQLException e) {
@@ -671,5 +679,327 @@ public class MySqlDriver {
 				e.printStackTrace();
 			}
 		}
+
+		return users;
+	}
+	
+	public static Map<Interest,Integer> getUserInterestCount(String user_id) {
+		
+		Connection conn = database.getConnection();
+		ResultSet rs = null;
+		PreparedStatement preparedStatement = null;
+		Interest u = null;
+		Integer count = 0;
+		Map<Interest,Integer> interestCount = new HashMap<Interest, Integer>();
+		try {
+			String s = 	"SELECT  i.interest_id,i.interest_name, count(fi.interest_type) as count" + 
+						" FROM checkins c JOIN checkin_types t ON c.checkin_id = t.checkin_id and c.user_id = ?" +
+						" JOIN facebook_types f ON f.fb_type_name = t.name" +
+						" JOIN facebook_to_interest fi ON fi.fb_type_id = f.fb_type_id" +
+						" RIGHT JOIN interests i ON i.interest_id = fi.interest_type" +
+						" GROUP BY i.interest_id" +
+						" ORDER BY interest_id"
+						;
+			preparedStatement = conn.prepareStatement(s);
+			preparedStatement.setString(1, user_id);
+			rs = preparedStatement.executeQuery();
+			while (rs.next()) {
+				u = new Interest();
+				u.setId(rs.getInt("interest_id"));
+				u.setName(rs.getString("interest_name"));
+				count = rs.getInt("count");
+				interestCount.put(u, count);
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				rs.close();
+				preparedStatement.close();
+				conn.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+
+		return interestCount;
+	}
+	
+	public static Map<Integer,Integer> getUserPriceRangeCount(String user_id) {
+		
+		Connection conn = database.getConnection();
+		ResultSet rs = null;
+		PreparedStatement preparedStatement = null;
+		Integer id = null;
+		Integer count = 0;
+		Map<Integer,Integer> priceCount = new HashMap<Integer, Integer>();
+		try {
+			String s = 	"SELECT r.id, count(c.price_range_code) as count" +
+						" FROM checkins c " +
+						" RIGHT JOIN price_ranges r ON r.id = c.price_range_code and  c.user_id = ? and r.id > 0" +
+						" GROUP BY r.id" + 
+						" ORDER BY id";
+			preparedStatement = conn.prepareStatement(s);
+			preparedStatement.setString(1, user_id);
+			rs = preparedStatement.executeQuery();
+			while (rs.next()) {
+				id = rs.getInt("id");
+				count = rs.getInt("count");
+				priceCount.put(id, count);
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				rs.close();
+				preparedStatement.close();
+				conn.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+
+		return priceCount;
+	}
+	
+	public static boolean insertOrUpdateSimilarity(String first_user_id,String sec_user_id, double similarity) {
+		Connection conn = database.getConnection();
+		ResultSet rs = null;
+		PreparedStatement preparedStatement = null;
+		boolean result = false;
+		try {
+			String s = "SELECT 1 FROM user_similarity WHERE first_user_id = ? and sec_user_id = ?";
+			preparedStatement = conn.prepareStatement(s);
+			preparedStatement.setString(1, first_user_id);
+			preparedStatement.setString(2, sec_user_id);
+			rs = preparedStatement.executeQuery();
+			if (rs.first()) {
+				result = updateSimlarity(first_user_id, sec_user_id, similarity);
+			} else {
+				preparedStatement.close();
+				rs.close();
+				preparedStatement = conn.prepareStatement(s);
+				preparedStatement.setString(1, sec_user_id);
+				preparedStatement.setString(2, first_user_id);
+				rs = preparedStatement.executeQuery();
+				
+				if (rs.first()) {
+					result = updateSimlarity(sec_user_id, first_user_id, similarity);
+				} else {
+					result = insertSimlarity(first_user_id, sec_user_id, similarity);
+				}
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				rs.close();
+				preparedStatement.close();
+				conn.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+
+		return result;
+	}
+	
+	public static boolean insertSimlarity(String first_user_id,String sec_user_id, double similarity) {
+
+		Connection conn = database.getConnection();
+		boolean result = true;
+		PreparedStatement preparedStatement = null;
+		int count = 0;
+		try {
+			String s = "INSERT INTO user_similarity (first_user_id, sec_user_id, total) "
+					 + " VALUES (?, ?, ?)";
+			preparedStatement = conn.prepareStatement(s);
+			preparedStatement.setString(1, first_user_id);
+			preparedStatement.setString(2, sec_user_id);
+			preparedStatement.setDouble(3, similarity);
+			count = preparedStatement.executeUpdate();
+			if (count == 0) {
+				result = false;
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+			result = false;
+		} finally {
+			try {
+				preparedStatement.close();
+				conn.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+		return result;
+	}
+	
+	public static boolean updateSimlarity(String first_user_id,String sec_user_id, double similarity) {
+
+		Connection conn = database.getConnection();
+		boolean result = true;
+		PreparedStatement preparedStatement = null;
+		int count = 0;
+		try {
+			String s = "UPDATE user_similarity SET total = ? WHERE first_user_id = ? AND sec_user_id = ?";
+			preparedStatement = conn.prepareStatement(s);
+			preparedStatement.setDouble(1, similarity);
+			preparedStatement.setString(2, first_user_id);
+			preparedStatement.setString(3, sec_user_id);
+
+			count = preparedStatement.executeUpdate();
+			if (count == 0) {
+				result = false;
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+			result = false;
+		} finally {
+			try {
+				preparedStatement.close();
+				conn.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+		return result;
+	}
+	
+	public static List<String> getSimilarPlaces(String user_id, Location curr_location) {
+
+		Connection conn = database.getConnection();
+		ResultSet rs = null;
+		PreparedStatement preparedStatement = null;
+		List<String> locations = new ArrayList<String>();
+		try {
+ 			String s =  "SELECT goog_place_id " +
+	 					"   111.1111 *"+
+	 					"    DEGREES(ACOS(COS(RADIANS(latitude))"+
+	 					"         * COS(RADIANS(?))"+
+	 					"         * COS(RADIANS(longitude - ?))"+
+	 					"         + SIN(RADIANS(latitude))"+
+	 					"         * SIN(RADIANS(?)))) AS distance_in_km"+
+	 					" FROM checkins "+
+	 					" WHERE user_id = ? and goog_place_id is not null"+
+	 					" HAVING distance_in_km < 3"+
+	 					" ORDER BY likes DESC , checkin_count DESC" +
+	 					" LIMIT 0,2";
+			preparedStatement = conn.prepareStatement(s);
+			preparedStatement.setString(1, curr_location.lat);
+			preparedStatement.setString(2, curr_location.lng);
+			preparedStatement.setString(3, curr_location.lat);
+			preparedStatement.setString(4, user_id);
+			rs = preparedStatement.executeQuery();
+			while (rs.next()) {
+				locations.add(rs.getString("goog_place_id"));
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				rs.close();
+				preparedStatement.close();
+				conn.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		return locations;
+	}
+	
+	public static List<String> getSimilarUsers(String user_id) {
+		Connection conn = database.getConnection();
+		ResultSet rs = null;
+		PreparedStatement preparedStatement = null;
+		String id = null;
+		Double score = 0.0;
+		List<String> similarUsers = new ArrayList<String>();
+		try {
+			String s = 	"SELECT other_user FROM" +
+						" (SELECT total,sec_user_id as other_user FROM user_similarity WHERE first_user_id = ? " +
+						" UNION " +
+						" SELECT total,first_user_id as other_user FROM user_similarity WHERE sec_user_id = ?) a" +
+						" ORDER BY total DESC";
+			preparedStatement = conn.prepareStatement(s);
+			preparedStatement.setString(1, user_id);
+			preparedStatement.setString(2, user_id);
+			rs = preparedStatement.executeQuery();
+			while (rs.next()) {
+				id = rs.getString("other_user");
+				similarUsers.add(id);
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				rs.close();
+				preparedStatement.close();
+				conn.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+
+		return similarUsers;
+	}
+	
+	
+	public static void calcSimilarities() throws Exception {
+		List<User> users = MySqlDriver.getUsers();
+		Map<Integer,Integer> first_price_data = null;
+		Map<Integer,Integer> sec_price_data = null;
+		Map<Interest,Integer> first_type_data = null;
+		Map<Interest,Integer> sec_type_data = null;
+		List<Integer> first_data_vector = null;
+		List<Integer> sec_data_vector = null;
+		
+		for (int i=0;i<users.size();i++) {
+			first_price_data = MySqlDriver.getUserPriceRangeCount( users.get(i).getUserId());
+			first_type_data = MySqlDriver.getUserInterestCount( users.get(i).getUserId());
+			first_data_vector = new ArrayList<Integer>();
+			first_data_vector.add(users.get(i).getAgeNotNull());
+			first_data_vector.add(users.get(i).getGenderCode());
+			first_data_vector.addAll(first_type_data.values());
+			first_data_vector.addAll(first_price_data.values());
+			
+			for (int j=i+1;j<users.size();j++){
+				sec_price_data = MySqlDriver.getUserPriceRangeCount( users.get(j).getUserId());
+				sec_type_data = MySqlDriver.getUserInterestCount( users.get(j).getUserId());
+				sec_data_vector = new ArrayList<Integer>();
+				sec_data_vector.add(users.get(j).getAgeNotNull());
+				sec_data_vector.add(users.get(j).getGenderCode());
+				sec_data_vector.addAll(sec_type_data.values());
+				sec_data_vector.addAll(sec_price_data.values());
+
+				double similarity = 
+						cosineSimilarity(first_data_vector.toArray(new Integer[first_data_vector.size()]), sec_data_vector.toArray(new Integer[sec_data_vector.size()]));
+
+				MySqlDriver.insertOrUpdateSimilarity(users.get(i).getUserId(),users.get(j).getUserId(),similarity);
+			}
+		}
+	}
+	
+	public static double cosineSimilarity(Integer[] vectorA, Integer[] vectorB) {
+	    double dotProduct = 0.0;
+	    double normA = 0.0;
+	    double normB = 0.0;
+	    for (int i = 0; i < vectorA.length; i++) {
+	        dotProduct += vectorA[i] * vectorB[i];
+	        normA += Math.pow(vectorA[i], 2);
+	        normB += Math.pow(vectorB[i], 2);
+	    }   
+	    
+	    if (normA == 0 || normB == 0) {
+	    	return 0;
+	    }
+	    
+	    return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
 	}
 }

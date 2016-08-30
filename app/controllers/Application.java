@@ -8,18 +8,23 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
-
-import org.joda.time.LocalDate;
-import org.joda.time.Years;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import model.Location;
 import model.MySqlDriver;
 import model.Place;
+
+import org.joda.time.LocalDate;
+import org.joda.time.Years;
+
 import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Result;
 import services.LoggedInFacebookClient;
 import services.PlaceFacebookClient;
+import services.PlacesService;
 import algo.EmotionsManager;
 import algo.RecommendationManager;
 
@@ -33,7 +38,12 @@ import com.restfb.types.FacebookType;
 import com.restfb.types.User;
 
 public class Application extends Controller {
-
+	static {
+		ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+		Runnable task = new SimilarityThread();    
+		executor.scheduleAtFixedRate(task, 0, 30, TimeUnit.MINUTES);
+	}
+	
 	public Result login() {
 		JsonNode data = request().body().asJson();
 		String userId = data.findPath("USER_ID").asText();
@@ -81,6 +91,7 @@ public class Application extends Controller {
 		String checkinsStr = "{\"CHECKINS\":[{\"created_time\":\"2016-03-21T17:35:34+0000\",\"place\":{\"name\":\"Exitroom Ramat-Gan\",\"category_list\":[{\"id\":\"133436743388217\",\"name\":\"Arts & Entertainment\"}],\"location\":{\"city\":\"Ramat Gan\",\"country\":\"Israel\",\"latitude\":32.087622764,\"longitude\":34.813273992,\"street\":\"Jabotinsky 83\"},\"id\":\"409390919243331\"},\"id\":\"1225267250835626\"},{\"created_time\":\"2015-01-26T14:35:32+0000\",\"place\":{\"name\":\"מרכז הירידים תל אביב - גני התערוכה\",\"category_list\":[{\"id\":\"133436743388217\",\"name\":\"Arts & Entertainment\"},{\"id\":\"198503866828628\",\"name\":\"Organization\"}],\"location\":{\"city\":\"Tel Aviv\",\"country\":\"Israel\",\"latitude\":32.0892296,\"longitude\":34.7797318,\"street\":\"שדרות רוקח\",\"zip\":\"69020\"},\"id\":\"202280733146165\"},\"id\":\"987429847952702\"},{\"created_time\":\"2013-09-04T10:12:01+0000\",\"place\":{\"name\":\"Abu Shukri\",\"category_list\":[{\"id\":\"273819889375819\",\"name\":\"Restaurant\"}],\"location\":{\"city\":\"Jerusalem\",\"country\":\"Israel\",\"latitude\":31.77960222016,\"longitude\":35.232370265627},\"id\":\"163213423733444\"},\"id\":\"689949581034065\"},{\"created_time\":\"2013-05-02T10:30:16+0000\",\"place\":{\"name\":\"Google Tel-Aviv\",\"category_list\":[{\"id\":\"152142351517013\",\"name\":\"Corporate Office\"}],\"location\":{\"city\":\"Tel Aviv\",\"country\":\"Israel\",\"latitude\":32.06370225,\"located_in\":\"337084306340818\",\"longitude\":34.779732417394,\"zip\":\"25900\"},\"id\":\"168772183146117\"},\"id\":\"625782667450757\"},{\"created_time\":\"2012-11-13T18:11:23+0000\",\"place\":{\"name\":\"קפה ג'ו\",\"category_list\":[{\"id\":\"197871390225897\",\"name\":\"Cafe\"},{\"id\":\"128673187201735\",\"name\":\"Coffee Shop\"}],\"location\":{\"city\":\"Qiryat Ono\",\"country\":\"Israel\",\"latitude\":32.056603824644,\"longitude\":34.866729453496},\"id\":\"181134078600241\"},\"id\":\"539675386061486\"}]}";
 		JsonNode data = Json.parse(checkinsStr);
 		proccessCheckins(data);
+
 		return ok();
 	}
 	
@@ -92,7 +103,7 @@ public class Application extends Controller {
 		
 		ArrayNode checkins = (ArrayNode) data.findPath("CHECKINS");
 		DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ssZ");
-		
+		PlacesService service = new PlacesService();
 		for (JsonNode checkin : checkins) {
 			String create_time = checkin.get("created_time").asText();
 			Timestamp date_create_time = new Timestamp(format.parse(create_time).getTime());
@@ -129,10 +140,19 @@ public class Application extends Controller {
 			Integer checkin_count = getPlace.getCheckins();
 			String main_category = getPlace.getCategory();
 			String price_range = getPlace.getPriceRange();
+			String goog_place_id = null;
+			
+			Place goog_place = service.getPlaceByName(name + " " + street + " " + city + " " + country);
+			
+			if (goog_place != null) {
+				goog_place_id = goog_place.getPlaceId();
+			}
 			
 			MySqlDriver.saveCheckin(user_id,checkin_id,date_create_time,
 									place_id,name,latitude,longitude,
-									street,city,country,zip,main_category,checkin_count,likes,price_range,types);
+									street,city,country,zip,main_category,checkin_count,likes,price_range,goog_place_id,types);
+			
+
 		}
 	}
 	
@@ -186,6 +206,15 @@ public class Application extends Controller {
 	public Result emotions(){
 		JsonNode data = request().body().asJson();
 		EmotionsManager.sendEmotions(data);
+		return ok();
+	}
+	
+	public Result similarity(){
+		try {
+			MySqlDriver.calcSimilarities();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		return ok();
 	}
 
