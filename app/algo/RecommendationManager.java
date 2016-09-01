@@ -37,12 +37,8 @@ public class RecommendationManager {
 		Map<Type, List<Place>> allPlaces = new HashMap<Type, List<Place>>();
 		List<String> allFbTypeNames = new ArrayList<String>();
 		List<Integer> allGoogleTypeName = new ArrayList<Integer>();
-
 		// set the places service with the current location and the radius
 		PlacesService service = new PlacesService(location, RADIUS);
-
-		// init the rating manager with the current location and user
-		RatingManager.getInstance().init(location, userId);
 
 		if (facebookTypes.isArray()) {
 			for (int i = 0; i < facebookTypes.size(); i++) {
@@ -58,30 +54,32 @@ public class RecommendationManager {
 				// if there is a google type linked to the current facebook type
 				if (googleType != null) {
 					allGoogleTypeName.add(googleType.getId());
-
 					if (!checkinTypes.containsKey(googleType)) {
-
 						// add the type with its amount
 						checkinTypes.put(googleType, count);
-
-						// get places list from google by the type.
-						currTypePlaces = service.getPlaces(googleType);
-						// if there are any places, sort them by the rating
-						// (desc)
-						if ((currTypePlaces != null) && (!currTypePlaces.isEmpty())) {
-							Collections.sort(currTypePlaces, new Comparator<Place>() {
-								@Override
-								public int compare(Place place1, Place place2) {
-									return (place2.getRate().compareTo(place1.getRate()));
-								}
-							});
-							allPlaces.put(googleType, currTypePlaces);
-						}
+	
 					} else {
 						checkinTypes.put(googleType, checkinTypes.get(googleType) + count);
 					}
-					// if there is no google type, get the interest linked to
-					// the facebook type.
+				}
+			}
+
+			// init the rating manager with the current location and user
+			RatingManager.getInstance().init(location, userId, checkinTypes);
+
+			for (Type checkinType : checkinTypes.keySet()) {
+				// get places list from google by the type.
+				currTypePlaces = service.getPlaces(checkinType);
+				// if there are any places, sort them by the rating
+				// (desc)
+				if ((currTypePlaces != null) && (!currTypePlaces.isEmpty())) {
+					Collections.sort(currTypePlaces, new Comparator<Place>() {
+						@Override
+						public int compare(Place place1, Place place2) {
+							return (place2.getRate().compareTo(place1.getRate()));
+						}
+					});
+					allPlaces.put(checkinType, currTypePlaces);
 				}
 			}
 		}
