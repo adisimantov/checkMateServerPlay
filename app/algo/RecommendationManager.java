@@ -31,12 +31,11 @@ public class RecommendationManager {
 	
 	public static List<Place> getRecommendedPlaces(Location location, JsonNode facebookTypes, String userId,
 			Calendar time) {
-
+		
 		// convertListJson(facebookTypes);
 		Map<Type, Integer> checkinTypes = new HashMap<Type, Integer>();
 		List<Place> currTypePlaces;
 		Map<Type, List<Place>> allPlaces = new HashMap<Type, List<Place>>();
-		Map<Interest, Integer> allInterest = new HashMap<Interest, Integer>();
 		List<String> allFbTypeNames = new ArrayList<String>();
 		List<Integer> allGoogleTypeName = new ArrayList<Integer>();
 
@@ -130,13 +129,12 @@ public class RecommendationManager {
 		}
 		
 		allPlaces.put(Type.other, otherPlaces);
+		List<Place> finalPlaces = new ArrayList<Place>();
 
 		Map<Type, Integer> finalAmounts = calcTypeAmount(checkinTypes);
 
-		List<Place> finalPlaces = new ArrayList<Place>();
-
 		for (Type type : finalAmounts.keySet()) {
-			finalPlaces.addAll(getTop(allPlaces.get(type), finalAmounts.get(type), time));
+			finalPlaces.addAll(getTop(allPlaces.get(type), finalPlaces,finalAmounts.get(type), time));
 		}
 
 		// TODO: extract the comparator
@@ -193,16 +191,18 @@ public class RecommendationManager {
 		return sortedMap;
 	}
 
-	private static List<Place> getTop(List<Place> places, int amount, Calendar time) {
+	private static List<Place> getTop(List<Place> places,List<Place> finalPlaces ,int amount, Calendar time) {
 
 		List<Place> top = new ArrayList<Place>();
 		if (places != null) {
 			for (Place place : places) {
-				place.fetchFullData();
-				if (place.isOpen(time)) {
-					top.add(place);
-					if (--amount <= 0) {
-						break;
+				if (!finalPlaces.contains(place)) {
+					place.fetchFullData();
+					if (place.isOpen(time)) {
+						top.add(place);
+						if (--amount <= 0) {
+							break;
+						}
 					}
 				}
 			}

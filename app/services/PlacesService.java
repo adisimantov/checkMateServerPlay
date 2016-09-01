@@ -41,7 +41,7 @@ public class PlacesService {
 
 			ArrayList<Place> arrayList = new ArrayList<Place>();
 
-			while (json != null) {
+//			while (json != null) {
 				JsonObject object = new JsonParser().parse(json).getAsJsonObject();
 				JsonArray array = object.get("results").getAsJsonArray();
 				String nextPage = null;
@@ -57,12 +57,12 @@ public class PlacesService {
 						e.printStackTrace();
 					}
 				}
-				if (nextPage != null) {
-					json = getPlacesJson(this.location, this.radius, type.getName(), nextPage);
-				} else {
-					json = null;
-				}
-			}
+//				if (nextPage != null) {
+//					json = getPlacesJson(this.location, this.radius, type.getName(), nextPage);
+//				} else {
+//					json = null;
+//				}
+//			}
 
 			return arrayList;
 		}

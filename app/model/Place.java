@@ -36,7 +36,7 @@ public class Place {
 
 	private String address;
 	private String phoneNumber;
-	private String website;
+	private String url;
 	private String[] openHoursText;
 	private JsonNode openHours;
 	private String photo;
@@ -108,11 +108,11 @@ public class Place {
 	}
 
 	public String getUrl() {
-		return website;
+		return url;
 	}
 
 	public void setUrl(String url) {
-		this.website = url;
+		this.url = url;
 	}
 
 	public void setTypes(List<Type> types) {
@@ -168,11 +168,11 @@ public class Place {
 	}
 
 	public String getWebsite() {
-		return website;
+		return url;
 	}
 
 	public void setWebsite(String website) {
-		this.website = website;
+		this.url = website;
 	}
 
 	public String[] getOpenHoursText() {
@@ -307,7 +307,6 @@ public class Place {
 		int size = placeSearch.getData().size();
 		int checkins = 0;
 		if (size <= 0) {
-			System.out.println("there is no place named " + this.getName() + " in facebook");
 
 		} else if (size <= 2) {
 			for (FacebookPlace place : placeSearch.getData()) {
@@ -328,6 +327,11 @@ public class Place {
 
 		this.setCheckins(checkins);
 
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		return this.place_id.equals(((Place)obj).place_id);
 	}
 
 	@Override
