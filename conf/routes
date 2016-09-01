@@ -4,14 +4,14 @@
 
 GET     /	controllers.Application.index()
 
-POST	/Recommandations	controllers.Application.recommandations()
-
 GET		/Recommand/:userId/:time/:longitude/:latitude	controllers.Application.getRecommandations(userId : String, time : Long, longitude : String, latitude : String)
+
+GET 	/Similarity controllers.Application.similarity()
+
+POST	/Recommandations	controllers.Application.recommandations()
 
 POST 	/Emotions	controllers.Application.emotions()
 
 POST	/Login	controllers.Application.login()
 
 POST	/Checkins	controllers.Application.saveCheckins()
-
-GET	/anna	controllers.Application.checkins()

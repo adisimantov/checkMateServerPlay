@@ -8,6 +8,9 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.joda.time.LocalDate;
 import org.joda.time.Years;
@@ -20,6 +23,7 @@ import play.mvc.Controller;
 import play.mvc.Result;
 import services.LoggedInFacebookClient;
 import services.PlaceFacebookClient;
+import services.PlacesService;
 import algo.EmotionsManager;
 import algo.RecommendationManager;
 
@@ -33,7 +37,12 @@ import com.restfb.types.FacebookType;
 import com.restfb.types.User;
 
 public class Application extends Controller {
-
+	static {
+		ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+		Runnable task = new SimilarityThread();    
+		executor.scheduleAtFixedRate(task, 0, 30, TimeUnit.MINUTES);
+	}
+	
 	public Result login() {
 		JsonNode data = request().body().asJson();
 		String userId = data.findPath("USER_ID").asText();
@@ -93,6 +102,7 @@ public class Application extends Controller {
 		ArrayNode checkins = (ArrayNode) data.findPath("CHECKINS");
 		DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ssZ");
 
+		PlacesService service = new PlacesService();
 		for (JsonNode checkin : checkins) {
 			String create_time = checkin.get("created_time").asText();
 			Timestamp date_create_time = new Timestamp(format.parse(create_time).getTime());
@@ -125,6 +135,14 @@ public class Application extends Controller {
 			Integer checkin_count = 0;
 			String main_category = "";
 			String price_range = "";
+						String goog_place_id = null;
+			
+			Place goog_place = service.getPlaceByName(name + " " + street + " " + city + " " + country);
+			
+			if (goog_place != null) {
+				goog_place_id = goog_place.getPlaceId();
+			}
+			
 
 			try {
 				FacebookClient facebookClient = new PlaceFacebookClient();
@@ -138,10 +156,10 @@ public class Application extends Controller {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-
-			MySqlDriver.saveCheckin(user_id, checkin_id, date_create_time, place_id, name, latitude, longitude, street,
-					city, country, zip, main_category, checkin_count, likes, price_range, types);
-
+	MySqlDriver.saveCheckin(user_id,checkin_id,date_create_time,
+									place_id,name,latitude,longitude,
+									street,city,country,zip,main_category,checkin_count,likes,price_range,goog_place_id,types);
+		
 		}
 	}
 

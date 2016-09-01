@@ -25,9 +25,10 @@ import com.google.gson.JsonObject;
 public class RecommendationManager {
 
 	private static final int RADIUS = 3000;
+	private static final int SIMILAR_USERS = 2;
 	private static final double OTHER_PERCENTS = 0.10;
 	private static final int TOTAL_RECOMMENDATION_AMOUNT = 30;
-
+	
 	public static List<Place> getRecommendedPlaces(Location location, JsonNode facebookTypes, String userId,
 			Calendar time) {
 		
@@ -110,6 +111,21 @@ public class RecommendationManager {
 			});
 		}
 
+		// Add places from simillar users
+		List<String> users = MySqlDriver.getSimilarUsers(userId);
+		List<String> places;
+		Place similar_place;
+		for (int i = 0; i < users.size() && i < SIMILAR_USERS;i++) {
+			 places = MySqlDriver.getSimilarPlaces(users.get(i), location);
+			 for (String place_id : places) {
+				 similar_place = service.getPlaceById(place_id);
+				 
+				 if (similar_place != null) {
+					 otherPlaces.add(similar_place);
+				 }
+			 }
+		}
+		
 		allPlaces.put(Type.other, otherPlaces);
 		List<Place> finalPlaces = new ArrayList<Place>();
 
