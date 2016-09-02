@@ -8,6 +8,8 @@ GET		/Recommand/:userId/:time/:longitude/:latitude	controllers.Application.getRe
 
 GET 	/Similarity controllers.Application.similarity()
 
+GET 	/anna controllers.Application.checkins()
+
 POST	/Recommandations	controllers.Application.recommandations()
 
 POST 	/Emotions	controllers.Application.emotions()
