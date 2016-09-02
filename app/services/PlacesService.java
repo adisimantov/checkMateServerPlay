@@ -159,16 +159,17 @@ public class PlacesService {
 
 			Place place = null;
 
-			if (json != null) {
-				place = new Place();
+			if (json != null && json != "") {
 				JsonObject object = new JsonParser().parse(json).getAsJsonObject();
 				JsonArray array = object.get("results").getAsJsonArray();
 
-				try {
-					place = new Place((JsonObject) array.get(0), null);
-				} catch (Exception e) {
-					System.out.println(e.getMessage());
-					e.printStackTrace();
+				if (array != null && array.size() > 0) {
+					try {
+						place = new Place((JsonObject) array.get(0), null);
+					} catch (Exception e) {
+						System.out.println(e.getMessage());
+						e.printStackTrace();
+					}
 				}
 			}
 
