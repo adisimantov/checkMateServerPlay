@@ -28,16 +28,16 @@ public class RecommendationManager {
 	private static final int SIMILAR_USERS = 2;
 	private static final double OTHER_PERCENTS = 0.10;
 	private static final int TOTAL_RECOMMENDATION_AMOUNT = 30;
-	
+
 	public static List<Place> getRecommendedPlaces(Location location, JsonNode facebookTypes, String userId,
 			Calendar time) {
-		
+
 		// convertListJson(facebookTypes);
 		Map<Type, Integer> checkinTypes = new HashMap<Type, Integer>();
 		List<Place> currTypePlaces;
 		Map<Type, List<Place>> allPlaces = new HashMap<Type, List<Place>>();
 		List<String> allFbTypeNames = new ArrayList<String>();
-		List<Integer> allGoogleTypeName = new ArrayList<Integer>();
+		List<Integer> allGoogleTypes = new ArrayList<Integer>();
 		// set the places service with the current location and the radius
 		PlacesService service = new PlacesService(location, RADIUS);
 
@@ -54,11 +54,11 @@ public class RecommendationManager {
 
 				// if there is a google type linked to the current facebook type
 				if (googleType != null) {
-					allGoogleTypeName.add(googleType.getId());
 					if (!checkinTypes.containsKey(googleType)) {
 						// add the type with its amount
+						allGoogleTypes.add(googleType.getId());
 						checkinTypes.put(googleType, count);
-	
+
 					} else {
 						checkinTypes.put(googleType, checkinTypes.get(googleType) + count);
 					}
@@ -85,11 +85,12 @@ public class RecommendationManager {
 			}
 		}
 
-		List<Type> otherTypes = MySqlDriver.getGoogleTypesByInterestWithRate(allFbTypeNames, allGoogleTypeName, userId);
+		List<Type> otherTypes = MySqlDriver.getGoogleTypesByInterestWithRate(allFbTypeNames, allGoogleTypes, userId);
 		List<Type> chosenOther = new ArrayList<Type>();
 		Type randomType;
 		for (int i = 0; i < 3 && !otherTypes.isEmpty(); i++) {
 			randomType = getRandomType(otherTypes);
+			System.out.println("type " + i + " " + randomType.getName());
 			chosenOther.add(randomType);
 			otherTypes.remove(randomType);
 		}
@@ -115,24 +116,24 @@ public class RecommendationManager {
 		List<String> users = MySqlDriver.getSimilarUsers(userId);
 		List<String> places;
 		Place similar_place;
-		for (int i = 0; i < users.size() && i < SIMILAR_USERS;i++) {
-			 places = MySqlDriver.getSimilarPlaces(users.get(i), location);
-			 for (String place_id : places) {
-				 similar_place = service.getPlaceById(place_id);
-				 
-				 if (similar_place != null) {
-					 otherPlaces.add(similar_place);
-				 }
-			 }
+		for (int i = 0; i < users.size() && i < SIMILAR_USERS; i++) {
+			places = MySqlDriver.getSimilarPlaces(users.get(i), location);
+			for (String place_id : places) {
+				similar_place = service.getPlaceById(place_id);
+
+				if (similar_place != null) {
+					otherPlaces.add(similar_place);
+				}
+			}
 		}
-		
+
 		allPlaces.put(Type.other, otherPlaces);
 		List<Place> finalPlaces = new ArrayList<Place>();
 
 		Map<Type, Integer> finalAmounts = calcTypeAmount(checkinTypes);
 
 		for (Type type : finalAmounts.keySet()) {
-			finalPlaces.addAll(getTop(allPlaces.get(type), finalPlaces,finalAmounts.get(type), time));
+			finalPlaces.addAll(getTop(allPlaces.get(type), finalPlaces, finalAmounts.get(type), time));
 		}
 
 		// TODO: extract the comparator
@@ -189,7 +190,7 @@ public class RecommendationManager {
 		return sortedMap;
 	}
 
-	private static List<Place> getTop(List<Place> places,List<Place> finalPlaces ,int amount, Calendar time) {
+	private static List<Place> getTop(List<Place> places, List<Place> finalPlaces, int amount, Calendar time) {
 
 		List<Place> top = new ArrayList<Place>();
 		if (places != null) {
@@ -217,14 +218,14 @@ public class RecommendationManager {
 		total = (int) (total * (1 - OTHER_PERCENTS));
 
 		// get the total sum of the type counts
-		int sum = typeCount.values().stream().mapToInt(Integer::intValue).sum();
+		double sum = typeCount.values().stream().mapToInt(Integer::intValue).sum();
 
 		// create a new map with the amounts based on the final amount according
 		// to the
 		// percents of the types, rounding down.
 		Map<Type, Integer> m = new HashMap<Type, Integer>();
 		for (Map.Entry<Type, Integer> entry : typeCount.entrySet()) {
-			m.put(entry.getKey(), total * (entry.getValue() / sum));
+			m.put(entry.getKey(), (int)(total * (entry.getValue() / sum)));
 		}
 
 		// get the final sum of the types and set the "other" type as the rest
