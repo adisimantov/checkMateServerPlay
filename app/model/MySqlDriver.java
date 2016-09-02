@@ -876,7 +876,7 @@ public class MySqlDriver {
 		PreparedStatement preparedStatement = null;
 		List<String> locations = new ArrayList<String>();
 		try {
- 			String s =  "SELECT goog_place_id " +
+ 			String s =  "SELECT goog_place_id, " +
 	 					"   111.1111 *"+
 	 					"    DEGREES(ACOS(COS(RADIANS(latitude))"+
 	 					"         * COS(RADIANS(?))"+
@@ -902,7 +902,9 @@ public class MySqlDriver {
 			e.printStackTrace();
 		} finally {
 			try {
-				rs.close();
+				if(rs != null){
+					rs.close();
+				}
 				preparedStatement.close();
 				conn.close();
 			} catch (SQLException e) {

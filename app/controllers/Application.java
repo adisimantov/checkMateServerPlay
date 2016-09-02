@@ -119,7 +119,7 @@ public class Application extends Controller {
 			String street = location.findPath("street").asText();
 			double latitude = location.findPath("latitude").asDouble();
 			double longitude = location.findPath("longitude").asDouble();
-			String zip = location.findPath("zip").asText();
+			String zip = location.findPath("zip").asText();	
 
 			List<FacebookType> types = new ArrayList<FacebookType>();
 			FacebookType type;
@@ -215,6 +215,15 @@ public class Application extends Controller {
 		return ok();
 	}
 
+	public Result similarity(){
+ 		try {
+ 			MySqlDriver.calcSimilarities();
+ 		} catch (Exception e) {
+ 			e.printStackTrace();
+ 		}
+ 		return ok();
+ 	}
+	
 	public Result index() {
 		final JsonNode jsonResponse = Json.toJson("Your new application is ready.");
 		return ok(jsonResponse);
