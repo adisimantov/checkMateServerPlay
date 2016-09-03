@@ -2,9 +2,13 @@ package services;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -104,7 +108,17 @@ public class PlacesService {
 		HttpURLConnection conn = null;
 		StringBuilder jsonResults = new StringBuilder();
 		try {
+
 			URL url = makeTextSearchUrl(text);
+			
+			//final HttpClient client = new DefaultHttpClient();
+
+	        //final HttpUriRequest request = new HttpGet(url.toURI());
+
+	        //final HttpResponse execute = client.execute(request);
+
+	        //final String response = EntityUtils.toString(execute.getEntity());
+	        
 			conn = (HttpURLConnection) url.openConnection();
 			InputStreamReader in = new InputStreamReader(conn.getInputStream(), GoogleServicesCons.UTF8);
 
@@ -116,6 +130,8 @@ public class PlacesService {
 		} catch (MalformedURLException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
 			if (conn != null) {
@@ -152,12 +168,12 @@ public class PlacesService {
 		return jsonResults.toString();
 	}
 	
-	public Place getPlaceByName(String text) {
+	public String getPlaceByName(String text) {
 
 		try {
 			String json = getPlaceJsonByName(text);
 
-			Place place = null;
+			String place_id = null;
 
 			if (json != null && json != "") {
 				JsonObject object = new JsonParser().parse(json).getAsJsonObject();
@@ -165,7 +181,7 @@ public class PlacesService {
 
 				if (array != null && array.size() > 0) {
 					try {
-						place = new Place((JsonObject) array.get(0), null);
+						place_id = ((JsonObject) array.get(0)).get("place_id").getAsString();
 					} catch (Exception e) {
 						System.out.println(e.getMessage());
 						e.printStackTrace();
@@ -173,7 +189,7 @@ public class PlacesService {
 				}
 			}
 
-			return place;
+			return place_id;
 		}
 
 		catch (Exception ex) {
@@ -231,14 +247,16 @@ public class PlacesService {
 		return url;
 	}
 
-	private URL makeTextSearchUrl(String text) throws MalformedURLException {
+	private URL makeTextSearchUrl(String text) throws MalformedURLException, URISyntaxException, UnsupportedEncodingException {
 		StringBuilder sb = new StringBuilder(GoogleServicesCons.PLACES_API_BASE);
 		sb.append(TEXT_SEARCH);
 		sb.append(GoogleServicesCons.OUT_JSON);
 		sb.append("?key=" + GoogleServicesCons.API_SERVER_KEY);
 		sb.append("&language=" + GoogleServicesCons.HEBREW_LANG);
-		sb.append("&query=" + text);
+		sb.append("&query=" + URLEncoder.encode(text, "UTF-8"));
 
+		//URI uri = new URI(sb.toString());
+		
 		URL url = new URL(sb.toString());
 		return url;
 	}
