@@ -278,10 +278,16 @@ public class Place {
 					Calendar calendar = Calendar.getInstance();
 					Date open = format.parse(openTime.asText());
 					calendar.setTime(open);
+					calendar.set(chosenDate.get(Calendar.YEAR), 
+							chosenDate.get(Calendar.MONTH),
+							chosenDate.get(Calendar.DATE));
 					long openMiliseconds = calendar.getTimeInMillis();
 					
 					Date closed =  format.parse(closedTime.asText());
 					calendar.setTime(closed);
+					calendar.set(chosenDate.get(Calendar.YEAR), 
+							chosenDate.get(Calendar.MONTH),
+							chosenDate.get(Calendar.DATE));
 					long closedMiliseconds = calendar.getTimeInMillis();
 					
 					// Place is closed at wanted time
@@ -292,6 +298,9 @@ public class Place {
 				} catch (ParseException e) {
 					return false;
 				}
+			}
+			else{
+				return false;
 			}
 		}
 
