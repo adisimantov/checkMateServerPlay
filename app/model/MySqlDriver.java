@@ -255,7 +255,7 @@ public class MySqlDriver {
 		int count = 0;
 		try {
 			String s = "INSERT INTO users (user_id, token,name, age, gender) "
-					+ " VALUES (?, ?, ?, ?)";
+					+ " VALUES (?, ?, ?, ?, ?)";
 			preparedStatement = conn.prepareStatement(s);
 			preparedStatement.setString(1, userId);
 			preparedStatement.setString(2, token);
