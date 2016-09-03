@@ -206,13 +206,13 @@ public class PlacesService {
 
 			Place place = null;
 
-			if (json != null) {
-				place = new Place();
+			if (json != null && json != "") {
+				place = null;
 				JsonObject object = new JsonParser().parse(json).getAsJsonObject();
-				JsonArray array = object.get("results").getAsJsonArray();
+				JsonObject result = object.get("result").getAsJsonObject();
 
 				try {
-					place = new Place((JsonObject) array.get(0), null);
+					place = new Place(result, null);
 				} catch (Exception e) {
 					System.out.println(e.getMessage());
 					e.printStackTrace();
