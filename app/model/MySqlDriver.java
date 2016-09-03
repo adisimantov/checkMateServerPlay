@@ -248,23 +248,24 @@ public class MySqlDriver {
 		return user;
 	}
 	
-	public static boolean setUser(String userId, String token, Integer age, String gender) {
+	public static boolean setUser(String userId, String token, String name, Integer age, String gender) {
 		Connection conn = database.getConnection();
 		boolean result = true;
 		PreparedStatement preparedStatement = null;
 		int count = 0;
 		try {
-			String s = "INSERT INTO users (user_id, token, age, gender) "
+			String s = "INSERT INTO users (user_id, token,name, age, gender) "
 					+ " VALUES (?, ?, ?, ?)";
 			preparedStatement = conn.prepareStatement(s);
 			preparedStatement.setString(1, userId);
 			preparedStatement.setString(2, token);
+			preparedStatement.setString(3, name);
 			if (age != null) {
-				preparedStatement.setInt(3, age);
+				preparedStatement.setInt(4, age);
 			} else {
-				preparedStatement.setNull(3, Types.INTEGER);
+				preparedStatement.setNull(4, Types.INTEGER);
 			}
-			preparedStatement.setString(4, gender);
+			preparedStatement.setString(5, gender);
 			count = preparedStatement.executeUpdate();
 			if (count == 0) {
 				result = false;
@@ -851,6 +852,39 @@ public class MySqlDriver {
 			preparedStatement.setString(2, first_user_id);
 			preparedStatement.setString(3, sec_user_id);
 
+			count = preparedStatement.executeUpdate();
+			if (count == 0) {
+				result = false;
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+			result = false;
+		} finally {
+			try {
+				preparedStatement.close();
+				conn.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+		return result;
+	}
+	
+	public static boolean deleteCheckin(String checkin_id) {
+
+		Connection conn = database.getConnection();
+		boolean result = true;
+		PreparedStatement preparedStatement = null;
+		int count = 0;
+		try {
+			String s = "DELETE checkins WHERE checkin_id = ?";
+			preparedStatement = conn.prepareStatement(s);
+			preparedStatement.setString(1, checkin_id);
+			count = preparedStatement.executeUpdate();
+			preparedStatement.close();
+			s = "DELETE checkin_types WHERE checkin_id = ?";
+			preparedStatement = conn.prepareStatement(s);
+			preparedStatement.setString(1, checkin_id);
 			count = preparedStatement.executeUpdate();
 			if (count == 0) {
 				result = false;
