@@ -924,9 +924,9 @@ public class MySqlDriver {
 		List<String> similarUsers = new ArrayList<String>();
 		try {
 			String s = 	"SELECT other_user FROM" +
-						" (SELECT total,sec_user_id as other_user FROM user_similarity WHERE first_user_id = ? " +
+						" (SELECT total,sec_user_id as other_user FROM user_similarity WHERE first_user_id = ? and total > 0.1" +
 						" UNION " +
-						" SELECT total,first_user_id as other_user FROM user_similarity WHERE sec_user_id = ?) a" +
+						" SELECT total,first_user_id as other_user FROM user_similarity WHERE sec_user_id = ? and total > 0.1 ) a" +
 						" ORDER BY total DESC";
 			preparedStatement = conn.prepareStatement(s);
 			preparedStatement.setString(1, user_id);
