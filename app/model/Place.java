@@ -266,45 +266,45 @@ public class Place {
 	}
 
 	public boolean isOpen(Calendar chosenDate) {
-		if (this.openHours != null && !this.openHours.isNull()) {
-			int day = chosenDate.get(Calendar.DAY_OF_WEEK);
-			JsonNode dayHours = this.openHours.get(day);
-			if (dayHours != null && !dayHours.isNull()) {
-				DateFormat format = new SimpleDateFormat("HHmm");
-				
-				JsonNode openTime = dayHours.findPath("open").findPath("time");
-				JsonNode closedTime = dayHours.findPath("close").findPath("time");
+		DateFormat format = new SimpleDateFormat("HHmm");
+		int day = chosenDate.get(Calendar.DAY_OF_WEEK);
+
+		if (this.openHours != null && !this.openHours.isNull() && this.openHours.isArray()) {
+			for (JsonNode jsonNode : this.openHours) {
 				try {
-					Calendar calendar = Calendar.getInstance();
-					Date open = format.parse(openTime.asText());
-					calendar.setTime(open);
-					calendar.set(chosenDate.get(Calendar.YEAR), 
-							chosenDate.get(Calendar.MONTH),
-							chosenDate.get(Calendar.DATE));
-					long openMiliseconds = calendar.getTimeInMillis();
-					
-					Date closed =  format.parse(closedTime.asText());
-					calendar.setTime(closed);
-					calendar.set(chosenDate.get(Calendar.YEAR), 
-							chosenDate.get(Calendar.MONTH),
-							chosenDate.get(Calendar.DATE));
-					long closedMiliseconds = calendar.getTimeInMillis();
-					
-					// Place is closed at wanted time
-					if(!(chosenDate.getTimeInMillis() >= openMiliseconds && 
-						 chosenDate.getTimeInMillis() <= closedMiliseconds )) {
-						return false;
+					JsonNode open = jsonNode.findPath("open");
+					int openDay = open.findPath("day").asInt() + 1;
+					if (day == openDay) {
+						JsonNode openTime = open.findPath("time");
+						Calendar openCalendar = Calendar.getInstance();
+						Date openTimeDate = format.parse(openTime.asText());
+						openCalendar.setTime(openTimeDate);
+						openCalendar.set(chosenDate.get(Calendar.YEAR), chosenDate.get(Calendar.MONTH),
+								chosenDate.get(Calendar.DATE));
+
+						JsonNode close = jsonNode.findPath("close");
+						int closeDay = close.findPath("day").asInt() + 1;
+						JsonNode closeTime = close.findPath("time");
+						Calendar closeCalendar = Calendar.getInstance();
+						Date closeTimeDate = format.parse(closeTime.asText());
+						closeCalendar.setTime(closeTimeDate);
+						closeCalendar.set(chosenDate.get(Calendar.YEAR), chosenDate.get(Calendar.MONTH),
+								chosenDate.get(Calendar.DATE) + (closeDay - openDay));
+
+						if (openCalendar.before(chosenDate) && closeCalendar.after(chosenDate)) {
+							return true;
+						}
 					}
 				} catch (ParseException e) {
-					return false;
+					e.printStackTrace();
 				}
 			}
-			else{
-				return false;
-			}
-		}
 
-		return true;
+			return false;
+
+		} else {
+			return true;
+		}
 	}
 
 	public void fetchFacebookData() {
@@ -337,10 +337,10 @@ public class Place {
 		this.setCheckins(checkins);
 
 	}
-	
+
 	@Override
 	public boolean equals(Object obj) {
-		return this.place_id.equals(((Place)obj).place_id);
+		return this.place_id.equals(((Place) obj).place_id);
 	}
 
 	@Override
