@@ -5,6 +5,7 @@ public class User {
 	private String token;
 	private Integer age;
 	private char gender;
+	private String name;
 	
 	public User() {
 	}
@@ -50,4 +51,14 @@ public class User {
 	public int getAgeNotNull() {
 		return (age == null) ? 20 : age;
 	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+	
+	
 }

@@ -7,9 +7,12 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import play.db.Database;
 import play.db.Databases;
@@ -654,7 +657,7 @@ public class MySqlDriver {
 		User u = null;
 		List<User> users = new ArrayList<User>();
 		try {
- 			String s = " SELECT u.user_id, u.token, u.age, u.gender"
+ 			String s = " SELECT u.user_id, u.token, u.name, u.age, u.gender"
 					 + " FROM users u";
 			preparedStatement = conn.prepareStatement(s);
 			rs = preparedStatement.executeQuery();
@@ -662,6 +665,7 @@ public class MySqlDriver {
 				u = new User();
 				u.setUserId(rs.getString("user_id"));
 				u.setToken(rs.getString("token"));
+				u.setName(rs.getString("name"));
 				u.setAge(rs.getInt("age"));
 				if (rs.getString("gender") != null){
 					u.setGender(rs.getString("gender").charAt(0));
@@ -691,7 +695,12 @@ public class MySqlDriver {
 		PreparedStatement preparedStatement = null;
 		Interest u = null;
 		Integer count = 0;
-		Map<Interest,Integer> interestCount = new HashMap<Interest, Integer>();
+		Map<Interest,Integer> interestCount = new TreeMap<Interest, Integer>(new Comparator<Interest>() {
+			@Override
+			public int compare(Interest o1, Interest o2) {
+				return o2.getId().compareTo(o1.getId());
+			}
+		});
 		try {
 			String s = 	"SELECT  i.interest_id,i.interest_name, count(fi.interest_type) as count" + 
 						" FROM checkins c JOIN checkin_types t ON c.checkin_id = t.checkin_id and c.user_id = ?" +
@@ -699,7 +708,7 @@ public class MySqlDriver {
 						" JOIN facebook_to_interest fi ON fi.fb_type_id = f.fb_type_id" +
 						" RIGHT JOIN interests i ON i.interest_id = fi.interest_type" +
 						" GROUP BY i.interest_id" +
-						" ORDER BY interest_id"
+						" ORDER BY i.interest_id"
 						;
 			preparedStatement = conn.prepareStatement(s);
 			preparedStatement.setString(1, user_id);
@@ -734,13 +743,14 @@ public class MySqlDriver {
 		PreparedStatement preparedStatement = null;
 		Integer id = null;
 		Integer count = 0;
-		Map<Integer,Integer> priceCount = new HashMap<Integer, Integer>();
+		Map<Integer,Integer> priceCount = new TreeMap<Integer, Integer>();
 		try {
 			String s = 	"SELECT r.id, count(c.price_range_code) as count" +
 						" FROM checkins c " +
-						" RIGHT JOIN price_ranges r ON r.id = c.price_range_code and  c.user_id = ? and r.id > 0" +
+						" RIGHT JOIN price_ranges r ON r.id = c.price_range_code and  c.user_id = ? " +
+						" WHERE r.id > 0" +
 						" GROUP BY r.id" + 
-						" ORDER BY id";
+						" ORDER BY r.id";
 			preparedStatement = conn.prepareStatement(s);
 			preparedStatement.setString(1, user_id);
 			rs = preparedStatement.executeQuery();
@@ -1005,6 +1015,13 @@ public class MySqlDriver {
 			first_data_vector.addAll(first_type_data.values());
 			first_data_vector.addAll(first_price_data.values());
 			
+			String a = "[";
+			for (Integer vec : first_data_vector) {
+				a += " ," + vec.intValue();
+			}
+			System.out.println(users.get(i).getName() + " data : " + a + "]");
+			
+			
 			for (int j=i+1;j<users.size();j++){
 				sec_price_data = MySqlDriver.getUserPriceRangeCount( users.get(j).getUserId());
 				sec_type_data = MySqlDriver.getUserInterestCount( users.get(j).getUserId());
@@ -1020,6 +1037,8 @@ public class MySqlDriver {
 				MySqlDriver.insertOrUpdateSimilarity(users.get(i).getUserId(),users.get(j).getUserId(),similarity);
 			}
 		}
+		
+		System.out.println("Done calculating similarities");
 	}
 	
 	public static double cosineSimilarity(Integer[] vectorA, Integer[] vectorB) {
