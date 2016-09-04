@@ -5,6 +5,9 @@ import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.Period;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -15,14 +18,9 @@ import java.util.concurrent.TimeUnit;
 import model.Location;
 import model.MySqlDriver;
 import model.Place;
-
-import org.joda.time.LocalDate;
-import org.joda.time.Years;
-
 import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Result;
-import services.LoggedInFacebookClient;
 import services.PlaceFacebookClient;
 import services.PlacesService;
 import algo.EmotionsManager;
@@ -35,7 +33,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.restfb.FacebookClient;
 import com.restfb.Parameter;
 import com.restfb.types.FacebookType;
-import com.restfb.types.User;
 
 public class Application extends Controller {
 	static {
@@ -47,30 +44,32 @@ public class Application extends Controller {
 	public Result login() {
 		JsonNode data = request().body().asJson();
 		String userId = data.findPath("USER_ID").asText();
+		String name = data.findPath("NAME").asText();
+		String gender = data.findPath("GENDER").asText();
+		String birthdate = data.findPath("BIRTH_DATE").asText();
 		String token = data.findPath("TOKEN").asText();
 		boolean result = true;
 		
 		if (MySqlDriver.getUser(userId) == null) {
-			FacebookClient facebookClient = new LoggedInFacebookClient();
-			User getUser = 
-					facebookClient.fetchObject(userId , User.class,Parameter.with("fields", "id,gender,birthday"));
-			
-			String gender = null;
-			if (getUser.getGender() != null) {
-				if ("female".equals(getUser.getGender())) {
+
+			if (gender != null) {
+				if ("female".equals(gender)) {
 					gender = "f";
-				} else if ("male".equals(getUser.getGender())){
+				} else if ("male".equals(gender)){
 					gender = "m";
 				}
 			}
 			
 			Integer age = null;
-			if (getUser.getBirthdayAsDate() != null) {
-				LocalDate now = new LocalDate();
-				LocalDate birthday = new LocalDate(getUser.getBirthdayAsDate());
-				age = Years.yearsBetween(birthday, now).getYears();
+			if (birthdate != null) {
+				final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy");
+				
+				LocalDate now = LocalDate.now();
+				LocalDate birthday = LocalDate.parse(birthdate,formatter);
+				
+				age = Period.between(birthday, now).getYears();
 			}
-			result = MySqlDriver.setUser(userId, token, age, gender);
+			result = MySqlDriver.setUser(userId, token, name , age, gender);
 		}
 		
 		if (result) {
@@ -154,6 +153,7 @@ public class Application extends Controller {
 			String goog_place_id = service.getPlaceByName(name + " " + street + " " + city + " " + country);
 			
 			try {
+				MySqlDriver.deleteCheckin(checkin_id);
 				MySqlDriver.saveCheckin(user_id,checkin_id,date_create_time,
 										place_id,name,latitude,longitude,
 										street,city,country,zip,main_category,checkin_count,likes,price_range,goog_place_id,types);
